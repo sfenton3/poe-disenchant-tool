@@ -20,6 +20,7 @@ import {
 } from "@/lib/dateUtils";
 import { Clock, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface LastUpdatedProps {
   timestamp: Date;
@@ -89,13 +90,17 @@ export default function LastUpdated({
       console.debug("revalidateData response:", res);
     } catch (error) {
       console.error("Failed to refresh data:", error);
+      toast.error("Failed to refresh data", {
+        description:
+          "Unable to refresh the price data. Please try again later.",
+      });
       // Remove the loading state, since we don't get the updated data
       setIsRefreshing(false);
     } finally {
       // Not removing the loading state here, since there's a gap between setting this
       // and revalidation being reflected in the UI.
       // Updated date will hide the button.
-      // If for some reason we get the same data from the server (e.g. beacuse of Data Cache),
+      // If for some reason we get the same data from the server (e.g. because of Data Cache),
       // this will keep the "revalidating" state until next time update.
     }
   };
@@ -107,12 +112,11 @@ export default function LastUpdated({
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <span className="text-sm font-semibold">Last Updated</span>
-          {isStale ||
-            (alwaysShowRefresh && (
-              <Badge variant="destructive" className="text-xs">
-                Stale
-              </Badge>
-            ))}
+          {(isStale || alwaysShowRefresh) && (
+            <Badge variant="destructive" className="text-xs">
+              Needs refresh
+            </Badge>
+          )}
         </div>
         <div className="space-y-1">
           <div className="text-muted-foreground text-xs font-medium">
@@ -121,20 +125,18 @@ export default function LastUpdated({
           <div className="text-sm font-medium">{absoluteTime}</div>
         </div>
       </div>
-
       {/* Refresh Section - Only shown when data is stale */}
-      {isStale ||
-        (alwaysShowRefresh && (
-          <div className="space-y-3 border-t pt-2">
-            <div className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-semibold">Refresh Data</span>
-            </div>
-            <div className="text-muted-foreground text-sm">
-              Click the refresh button to get the latest price data.
-            </div>
+      {(isStale || alwaysShowRefresh) && (
+        <div className="space-y-3 border-t pt-2">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-semibold">Refresh Data</span>
           </div>
-        ))}
+          <div className="text-muted-foreground text-sm">
+            Click the refresh button to get the latest price data.
+          </div>
+        </div>
+      )}
     </div>
   );
 
