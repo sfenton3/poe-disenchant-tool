@@ -1,6 +1,6 @@
 "use client";
 
-import type { RowSelectionState } from "@tanstack/react-table";
+import type { RowSelectionState, Updater } from "@tanstack/react-table";
 import * as React from "react";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
@@ -10,7 +10,11 @@ import { useLocalStorage } from "@/lib/use-local-storage";
  * - Restores to a RowSelectionState object.
  * - SSR safe: no localStorage access until mounted.
  */
-export function usePersistentRowSelection(storageKey = "poe-udt:selected:v1") {
+export function usePersistentRowSelection(storageKey: string) {
+  if (!storageKey) {
+    throw new Error("storageKey must be non-empty");
+  }
+
   const [selectedIds, setSelectedIds] = useLocalStorage<string[]>(
     [],
     storageKey,
@@ -26,26 +30,19 @@ export function usePersistentRowSelection(storageKey = "poe-udt:selected:v1") {
   }, [selectedIds]);
 
   const setRowSelection = React.useCallback(
-    (
-      newSelection:
-        | RowSelectionState
-        | ((prev: RowSelectionState) => RowSelectionState),
-    ) => {
-      if (typeof newSelection === "function") {
-        const updatedSelection = newSelection(rowSelection);
-        const newSelectedIds = Object.entries(updatedSelection)
-          .filter(([, v]) => Boolean(v))
+    (update: Updater<RowSelectionState>) => {
+      setSelectedIds((prev) => {
+        const prevSelection = Object.fromEntries(
+          prev.map((id) => [id, true] as const),
+        ) as RowSelectionState;
+        const next =
+          typeof update === "function" ? update(prevSelection) : update;
+        return Object.entries(next)
+          .filter(([, v]) => v)
           .map(([k]) => k);
-        setSelectedIds(newSelectedIds);
-        return;
-      }
-
-      const newSelectedIds = Object.entries(newSelection)
-        .filter(([, v]) => Boolean(v))
-        .map(([k]) => k);
-      setSelectedIds(newSelectedIds);
+      });
     },
-    [rowSelection, setSelectedIds],
+    [setSelectedIds],
   );
 
   const clearSelection = React.useCallback(() => {
