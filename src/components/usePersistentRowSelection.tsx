@@ -4,6 +4,13 @@ import type { RowSelectionState, Updater } from "@tanstack/react-table";
 import * as React from "react";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
+function idsToRowSelection(ids: string[]): RowSelectionState {
+  return ids.reduce<RowSelectionState>((acc, id) => {
+    acc[id] = true;
+    return acc;
+  }, {});
+}
+
 /**
  * Persist TanStack Table rowSelection to localStorage.
  * - Stores as an array of selected row ids (uniqueId strings).
@@ -21,22 +28,18 @@ export function usePersistentRowSelection(storageKey: string) {
     { debounceDelay: 300 },
   );
 
-  const rowSelection = React.useMemo(() => {
-    const selection: RowSelectionState = {};
-    for (const id of selectedIds) {
-      selection[id] = true;
-    }
-    return selection;
-  }, [selectedIds]);
+  const rowSelection = React.useMemo(
+    () => idsToRowSelection(selectedIds),
+    [selectedIds],
+  );
 
   const setRowSelection = React.useCallback(
     (update: Updater<RowSelectionState>) => {
       setSelectedIds((prev) => {
-        const prevSelection = Object.fromEntries(
-          prev.map((id) => [id, true] as const),
-        ) as RowSelectionState;
         const next =
-          typeof update === "function" ? update(prevSelection) : update;
+          typeof update === "function"
+            ? update(idsToRowSelection(prev))
+            : update;
         return Object.entries(next)
           .filter(([, v]) => v)
           .map(([k]) => k);
