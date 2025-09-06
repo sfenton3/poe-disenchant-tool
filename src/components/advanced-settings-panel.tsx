@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox, type CheckedState } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,17 +22,20 @@ import {
 import * as React from "react";
 import { Separator } from "./ui/separator";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
-export interface AdvancedSettings {
-  minItemLevel: number;
-  includeCorrupted: boolean;
-}
+export const AdvancedSettingsSchema = z
+  .object({
+    minItemLevel: z.number().int().min(65).max(84).default(78),
+    includeCorrupted: z.boolean().default(true),
+  })
+  .strict();
 
-export const DEFAULT_ADVANCED_SETTINGS: AdvancedSettings = {
-  minItemLevel: 78,
-  includeCorrupted: true,
-};
+export type AdvancedSettings = z.infer<typeof AdvancedSettingsSchema>;
 
+// Default values derived from schema
+export const DEFAULT_ADVANCED_SETTINGS: AdvancedSettings =
+  AdvancedSettingsSchema.parse({});
 interface AdvancedSettingsPanelProps {
   settings: AdvancedSettings;
   onSettingsChange: (settings: AdvancedSettings) => void;
@@ -65,10 +68,10 @@ export function AdvancedSettingsPanel({
     });
   };
 
-  const handleIncludeCorruptedChange = (checked: boolean) => {
+  const handleIncludeCorruptedChange = (checked: CheckedState) => {
     onSettingsChange({
       ...settings,
-      includeCorrupted: checked,
+      includeCorrupted: checked === true,
     });
   };
 

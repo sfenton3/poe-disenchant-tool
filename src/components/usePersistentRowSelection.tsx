@@ -2,14 +2,18 @@
 
 import type { RowSelectionState, Updater } from "@tanstack/react-table";
 import * as React from "react";
+import { z } from "zod";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
-function idsToRowSelection(ids: string[]): RowSelectionState {
+function idsToRowSelection(ids: readonly string[]): RowSelectionState {
   return ids.reduce<RowSelectionState>((acc, id) => {
     acc[id] = true;
     return acc;
   }, {});
 }
+
+const SelectedIdsSchema = z.array(z.string());
+type SelectedIds = z.infer<typeof SelectedIdsSchema>;
 
 /**
  * Persist TanStack Table rowSelection to localStorage.
@@ -22,10 +26,13 @@ export function usePersistentRowSelection(storageKey: string) {
     throw new Error("storageKey must be non-empty");
   }
 
-  const [selectedIds, setSelectedIds] = useLocalStorage<string[]>(
+  const [selectedIds, setSelectedIds] = useLocalStorage<SelectedIds>(
     [],
     storageKey,
-    { debounceDelay: 300 },
+    {
+      debounceDelay: 300,
+      schema: SelectedIdsSchema,
+    },
   );
 
   const rowSelection = React.useMemo(
