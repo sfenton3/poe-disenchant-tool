@@ -30,6 +30,8 @@ const defaultState: DataTableState = {
 
 const DataTableStateContext = createContext<DataTableState>(defaultState);
 
+const chaosColumnId = COLUMN_IDS.CHAOS;
+
 export function DataTableStateProvider({
   children,
 }: {
@@ -46,8 +48,6 @@ export function DataTableStateProvider({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
     defaultState.columnFilters,
   );
-
-  const chaosColumnId = COLUMN_IDS.CHAOS;
 
   // Restore persisted filters after mount
   React.useEffect(() => {
