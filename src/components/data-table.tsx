@@ -44,6 +44,7 @@ interface DataTableProps<TData, TValue> {
   advancedSettings: AdvancedSettings;
   onAdvancedSettingsChange: (settings: AdvancedSettings) => void;
   league: League;
+  lowStockThreshold: number;
 }
 
 export function DataTable<TData extends Item, TValue>({
@@ -52,6 +53,7 @@ export function DataTable<TData extends Item, TValue>({
   advancedSettings,
   onAdvancedSettingsChange,
   league,
+  lowStockThreshold,
 }: DataTableProps<TData, TValue>) {
   const {
     sorting,
@@ -129,6 +131,7 @@ export function DataTable<TData extends Item, TValue>({
           table={table}
           advancedSettings={advancedSettings}
           league={league}
+          lowStockThreshold={lowStockThreshold}
         />
       </div>
 

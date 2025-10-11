@@ -1,5 +1,7 @@
 "use client";
 
+import type { AdvancedSettings } from "@/components/advanced-settings-panel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -8,17 +10,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { Item } from "@/lib/itemData";
+import type { League } from "@/lib/leagues";
 import { createTradeLink } from "@/lib/tradeLink";
 import { Row } from "@tanstack/react-table";
-import { ExternalLink, Info } from "lucide-react";
+import { ExternalLink, Info, PackageMinus } from "lucide-react";
 import * as React from "react";
 import { ChaosOrbIcon } from "./chaos-orb-icon";
+import { COLUMN_IDS } from "./columns";
 import { DustIcon } from "./dust-icon";
 import { DustInfo } from "./dust-info";
-import { ItemMarkingInfo } from "./item-marking-info";
-import { AdvancedSettings } from "./advanced-settings-panel";
-import { COLUMN_IDS } from "./columns";
 import { Icon } from "./icon";
+import { ItemMarkingInfo } from "./item-marking-info";
+import { LowStockInfo } from "./low-stock-info";
+
 // Checkbox with memo
 const SelectionCheckbox = React.memo(function SelectionCheckbox({
   checked,
@@ -88,13 +92,12 @@ const DustInfoPopover = React.memo(function DustInfoPopover() {
   );
 });
 
-import { League } from "@/lib/leagues";
-
 interface MobileCardProps<TData extends Item> {
   row: Row<TData>;
   isSelected: boolean;
-  advancedSettings?: AdvancedSettings;
+  advancedSettings: AdvancedSettings;
   league: League;
+  lowStockThreshold: number;
 }
 
 function MobileCardComponent<TData extends Item>({
@@ -102,6 +105,7 @@ function MobileCardComponent<TData extends Item>({
   isSelected,
   advancedSettings,
   league,
+  lowStockThreshold,
 }: MobileCardProps<TData>) {
   const name = row.getValue<string>(COLUMN_IDS.NAME);
   const variant = row.original.variant;
@@ -160,15 +164,17 @@ function MobileCardComponent<TData extends Item>({
 
       {/* Price and Dust Value */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <p className="text-muted-foreground text-sm">Price</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-1 text-sm">
+            <p className="text-muted-foreground">Price</p>
+          </div>
           <div className="flex items-center gap-1 text-sm font-semibold">
             <span>{chaos}</span>
             <ChaosOrbIcon className="h-4 w-4" />
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="text-muted-foreground text-sm">Dust Value</p>
             <div className="flex items-center gap-1 text-sm font-semibold">
               <span>{calculatedDustValue}</span>
@@ -179,15 +185,43 @@ function MobileCardComponent<TData extends Item>({
         </div>
       </div>
 
-      {/* Dust per Chaos (Primary metric) */}
-      <div className="space-y-1">
-        <p className="text-muted-foreground text-sm">Dust per Chaos</p>
-        <div className="text-primary flex items-center gap-1 text-left text-lg font-bold">
-          <span className="">{dustPerChaos}</span>
-          <DustIcon className="h-5 w-5" />
-          <span className="text-muted-foreground">/</span>
-          <ChaosOrbIcon className="h-5 w-5" />
+      {/* Dust per Chaos (Primary metric) with low stock badge */}
+      <div className="flex justify-between">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-muted-foreground text-sm">Dust per Chaos</p>
+
+          <div className="text-primary flex items-center gap-1 text-lg font-bold">
+            <span className="truncate">{dustPerChaos}</span>
+            <DustIcon className="h-5 w-5" />
+            <span className="text-muted-foreground">/</span>
+            <ChaosOrbIcon className="h-5 w-5" />
+          </div>
         </div>
+
+        {row.original.listingCount < lowStockThreshold && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Badge variant="amber" asChild>
+                <Button
+                  className="mb-1 inline-flex place-self-end"
+                  size="sm"
+                  aria-label={`Low stock details for ${name}`}
+                >
+                  <PackageMinus className="mr-1" />
+                  Low Stock
+                </Button>
+              </Badge>
+            </PopoverTrigger>
+
+            <PopoverContent className="max-w-[280px] text-sm">
+              <LowStockInfo
+                name={name}
+                listingCount={row.original.listingCount}
+                lowStockThreshold={lowStockThreshold}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       {/* Trade Link */}
@@ -219,6 +253,8 @@ export const MobileCard = React.memo(
     return (
       prevProps.row.id === nextProps.row.id &&
       prevProps.isSelected === nextProps.isSelected &&
+      prevProps.league === nextProps.league &&
+      prevProps.lowStockThreshold === nextProps.lowStockThreshold &&
       JSON.stringify(prevProps.advancedSettings) ===
         JSON.stringify(nextProps.advancedSettings)
     );

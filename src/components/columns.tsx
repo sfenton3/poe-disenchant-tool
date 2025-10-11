@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,13 +15,14 @@ import {
   ColumnDefTemplate,
   HeaderContext,
 } from "@tanstack/react-table";
-import { ExternalLink, Info } from "lucide-react";
+import { ExternalLink, Info, PackageMinus } from "lucide-react";
 import * as React from "react";
 import { ChaosOrbIcon } from "./chaos-orb-icon";
 import { DustIcon } from "./dust-icon";
 import { DustInfo } from "./dust-info";
-import { ItemMarkingInfo } from "./item-marking-info";
 import { Icon } from "./icon";
+import { ItemMarkingInfo } from "./item-marking-info";
+import { LowStockInfo } from "./low-stock-info";
 
 import type { AdvancedSettings } from "./advanced-settings-panel";
 
@@ -79,6 +81,7 @@ import { League } from "@/lib/leagues";
 
 export const createColumns = (
   advancedSettings: AdvancedSettings,
+  lowStockThreshold: number,
   league: League,
 ): ColumnDef<Item>[] => [
   {
@@ -130,7 +133,7 @@ export const createColumns = (
   {
     accessorKey: COLUMN_IDS.CHAOS,
     header: () => <span>Price</span>,
-    size: 110,
+    size: 100,
     meta: { className: "text-right tabular-nums" },
     filterFn: (row, columnId, filterValue) => {
       if (!filterValue) return true;
@@ -145,11 +148,9 @@ export const createColumns = (
     cell: ({ row }) => {
       const value = row.getValue(COLUMN_IDS.CHAOS) as number;
       return (
-        <span className="block w-full">
-          <span className="float-right inline-flex items-center gap-1">
-            <span>{value}</span>
-            <ChaosOrbIcon />
-          </span>
+        <span className="inline-flex w-full justify-end gap-1">
+          <span>{value}</span>
+          <ChaosOrbIcon />
         </span>
       );
     },
@@ -200,32 +201,64 @@ export const createColumns = (
   {
     id: COLUMN_IDS.TRADE_LINK,
     header: "Trade Link",
-    size: 110,
+    size: 160,
     enableSorting: false,
     cell: ({ row }) => {
       const name = row.getValue(COLUMN_IDS.NAME) as string;
       const link = createTradeLink(name, league, advancedSettings);
-      return (
-        <div className="flex w-full flex-1 items-center">
-          <Button
-            asChild
-            variant="default"
-            size="icon"
-            className="text-primary bg-primary/10 hover:bg-primary/20 hover:outline-primary mx-auto size-10 outline-1 hover:outline-solid"
-          >
-            <a
-              href={link}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`Open trade search for ${name} in new tab`}
-              title={`Open trade search for ${name}`}
-              className="inline-flex items-center"
+      const listingCount = row.original.listingCount;
+      const isLowStock = listingCount < lowStockThreshold;
+
+      // Reusable link element
+      const linkElement = (
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open trade search for ${name} in new tab${isLowStock ? " (low stock warning)" : ""}`}
+          title={`Open trade search for ${name}`}
+          className="inline-flex items-center gap-2"
+        >
+          <ExternalLink className="size-5" aria-hidden="true" />
+          {isLowStock && (
+            <Badge
+              variant="amber"
+              className="absolute -top-1 -right-2 size-4 border-none bg-transparent p-0"
+              aria-hidden="true"
             >
-              <ExternalLink className="size-5" aria-hidden="true" />
-            </a>
-          </Button>
-        </div>
+              <PackageMinus />
+            </Badge>
+          )}
+        </a>
       );
+
+      const button = (
+        <Button
+          asChild
+          variant="default"
+          size="lg"
+          className="text-primary bg-primary/10 hover:bg-primary/20 border-input hover:border-primary relative mx-auto gap-2 border border-solid"
+        >
+          {linkElement}
+        </Button>
+      );
+
+      const content = isLowStock ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipContent className="max-w-[280px] text-sm" variant="popover">
+            <LowStockInfo
+              name={name}
+              listingCount={listingCount}
+              lowStockThreshold={lowStockThreshold}
+            />
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        button
+      );
+
+      return <div className="flex w-full flex-1 items-center">{content}</div>;
     },
   },
   {
