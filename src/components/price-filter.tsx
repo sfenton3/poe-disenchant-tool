@@ -11,25 +11,25 @@ import {
 import { Slider } from "@/components/ui/slider";
 import type { Item } from "@/lib/itemData";
 import {
-  type PriceFilterContext,
-  type PriceFilterValue,
-  createNormalizedFilterValue,
   getCurrentRange,
   getLowerBoundLinearValue,
   getLowerBoundSliderValue,
   hasActiveFilter,
+  hasMinFilter,
+  hasMaxFilter,
   resetFilter,
-  setFilterValue,
+  createNormalizedFilterValue,
   updateLowerBound,
   updateUpperBound,
+  setFilterValue,
 } from "@/lib/price-filter";
 import { cn } from "@/lib/utils";
 import type { Column } from "@tanstack/react-table";
 import { ChevronDown, Filter } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ChaosOrbIcon } from "./chaos-orb-icon";
 
-export type { PriceFilterValue };
+export type { PriceFilterValue } from "@/lib/price-filter";
 
 interface PriceFilterProps<TData> {
   column: Column<TData, unknown> | undefined;
@@ -46,56 +46,59 @@ export function PriceFilter<TData extends Item>({
 }: PriceFilterProps<TData>) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Create filter context
-  const filterContext: PriceFilterContext<TData> = { column, min, max };
+  // Defaults object to pass into logic helpers
+  const defaults = useMemo(() => ({ min, max }), [min, max]);
 
-  // Get current range state
-  const currentRange = getCurrentRange(filterContext);
+  const currentRange = getCurrentRange(column, defaults);
 
   // Handle lower bound changes with logarithmic scaling
-  const handleLowerBoundChange = (sliderValue: number[]) => {
-    const newLinearValue = getLowerBoundLinearValue(
-      filterContext,
-      sliderValue[0],
-    );
-    const updatedRange = updateLowerBound(
-      filterContext,
-      newLinearValue,
-      currentRange,
-    );
-    const normalizedFilter = createNormalizedFilterValue(
-      filterContext,
-      updatedRange,
-    );
-    setFilterValue(filterContext, normalizedFilter);
-  };
+  const handleLowerBoundChange = useCallback(
+    (sliderValue: number[]) => {
+      const newLinearValue = getLowerBoundLinearValue(
+        column,
+        sliderValue[0],
+        defaults,
+      );
+      const updatedRange = updateLowerBound(newLinearValue, currentRange, {
+        max,
+      });
+      const normalizedFilter = createNormalizedFilterValue(
+        updatedRange,
+        defaults,
+      );
+      setFilterValue(column, normalizedFilter);
+    },
+    [column, currentRange, defaults, max],
+  );
 
-  // Handle upper bound changes with linear scaling
-  const handleUpperBoundChange = (sliderValue: number[]) => {
-    const updatedRange = updateUpperBound(
-      filterContext,
-      sliderValue[0], // Direct value since upper bound uses linear scaling
-      currentRange,
-    );
-    const normalizedFilter = createNormalizedFilterValue(
-      filterContext,
-      updatedRange,
-    );
-    setFilterValue(filterContext, normalizedFilter);
-  };
+  const handleUpperBoundChange = useCallback(
+    (sliderValue: number[]) => {
+      const updatedRange = updateUpperBound(
+        sliderValue[0], // Direct value since upper bound uses linear scaling
+        currentRange,
+        {
+          max,
+        },
+      );
+      const normalizedFilter = createNormalizedFilterValue(
+        updatedRange,
+        defaults,
+      );
+      setFilterValue(column, normalizedFilter);
+    },
+    [column, currentRange, defaults, max],
+  );
 
-  // Check if there's an active filter
-  const isFilterActive = hasActiveFilter(filterContext);
+  const isFilterActive = hasActiveFilter(column, defaults);
 
-  // Handle reset
-  const handleReset = () => {
-    resetFilter(filterContext);
-  };
+  const handleReset = useCallback(() => {
+    resetFilter(column);
+  }, [column]);
 
   // Handle apply (close popover)
-  const handleApply = () => {
+  const handleApply = useCallback(() => {
     setIsOpen(false);
-  };
+  }, []);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -137,7 +140,11 @@ export function PriceFilter<TData extends Item>({
                   max={100}
                   step={1}
                   value={[
-                    getLowerBoundSliderValue(filterContext, currentRange.lower),
+                    getLowerBoundSliderValue(
+                      column,
+                      currentRange.min,
+                      defaults,
+                    ),
                   ]}
                   onValueChange={handleLowerBoundChange}
                   className="w-full py-1"
@@ -149,8 +156,10 @@ export function PriceFilter<TData extends Item>({
                   <span className="leading-none">{min}</span>
                   <ChaosOrbIcon />
                 </span>
-                <span className="text-foreground inline-flex items-center gap-1 font-semibold">
-                  <span className="leading-none">{currentRange.lower}</span>
+                <span
+                  className={`inline-flex items-center gap-1 font-semibold ${hasMinFilter(currentRange, { min }) ? "text-foreground" : "text-muted-foreground"}`}
+                >
+                  <span className="leading-none">{currentRange.min}</span>
                   <ChaosOrbIcon />
                 </span>
               </div>
@@ -161,29 +170,37 @@ export function PriceFilter<TData extends Item>({
               <div className="px-2">
                 <Slider
                   id="upper-bound"
-                  min={currentRange.lower}
+                  min={currentRange.min}
                   max={max}
                   step={10}
-                  value={[currentRange.upper!]}
+                  value={[
+                    hasMaxFilter(currentRange, { max })
+                      ? (currentRange.max as number)
+                      : max,
+                  ]}
                   onValueChange={handleUpperBoundChange}
                   disabled={false}
                   className={cn(
                     "w-full py-1",
-                    !currentRange.upperEnabled && "opacity-60",
+                    !hasMaxFilter(currentRange, { max }) && "opacity-60",
                   )}
                   aria-label="Upper bound price filter"
                 />
               </div>
               <div className="text-muted-foreground flex justify-between text-xs">
                 <span
-                  className={`inline-flex items-center gap-1 font-semibold ${currentRange.upperEnabled ? "text-foreground" : "text-muted-foreground"}`}
+                  className={`inline-flex items-center gap-1 font-semibold ${
+                    hasMaxFilter(currentRange, { max })
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  }`}
                 >
                   <span className="leading-none">
-                    {currentRange.upperEnabled
-                      ? currentRange.upper
+                    {hasMaxFilter(currentRange, { max })
+                      ? currentRange.max
                       : "No limit"}
                   </span>
-                  {currentRange.upperEnabled && <ChaosOrbIcon />}
+                  {hasMaxFilter(currentRange, { max }) && <ChaosOrbIcon />}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <span className="leading-none">{max}</span>
@@ -205,16 +222,16 @@ export function PriceFilter<TData extends Item>({
             </div>
             <div className="text-muted-foreground text-xs leading-[18px]">
               {isFilterActive ? (
-                currentRange.upperEnabled ? (
+                hasMaxFilter(currentRange, { max }) ? (
                   <>
                     Showing items between{" "}
                     <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.lower}</span>
+                      <span className="leading-none">{currentRange.min}</span>
                       <ChaosOrbIcon />
                     </span>{" "}
                     and{" "}
                     <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.upper}</span>
+                      <span className="leading-none">{currentRange.max}</span>
                       <ChaosOrbIcon />
                     </span>
                     .
@@ -223,7 +240,7 @@ export function PriceFilter<TData extends Item>({
                   <>
                     Showing items{" "}
                     <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.lower}</span>
+                      <span className="leading-none">{currentRange.min}</span>
                       <ChaosOrbIcon />
                     </span>{" "}
                     and above.
