@@ -24,7 +24,7 @@ const tooltipContentVariants = cva(
 );
 
 function TooltipProvider({
-  delayDuration = 0,
+  delayDuration = 300,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
   return (
@@ -47,9 +47,16 @@ function Tooltip({
 }
 
 function TooltipTrigger({
+  className,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+  return (
+    <TooltipPrimitive.Trigger
+      data-slot="tooltip-trigger"
+      className={cn("cursor-help", className)}
+      {...props}
+    />
+  );
 }
 
 function TooltipContent({

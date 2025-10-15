@@ -9,7 +9,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { Table } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Type } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  StretchHorizontal,
+  Type,
+} from "lucide-react";
 import React from "react";
 import { COLUMN_IDS, type ColumnId } from "./columns";
 
@@ -36,11 +42,29 @@ type SortState = "none" | "asc" | "desc";
 const sortOptions: SortOption[] = [
   {
     id: COLUMN_IDS.DUST_PER_CHAOS,
-    label: "Dust per Chaos",
+    label: "Dust / Chaos",
     icons: (
       <>
         <DustIcon className="h-4 w-4" aria-hidden="true" alt="" />
+        /
         <ChaosOrbIcon className="h-4 w-4" aria-hidden="true" alt="" />
+      </>
+    ),
+  },
+  {
+    id: COLUMN_IDS.DUST_PER_CHAOS_PER_SLOT,
+    label: "Dust / Chaos / Slot",
+    icons: (
+      <>
+        <DustIcon className="h-4 w-4" aria-hidden="true" alt="" />
+        /
+        <ChaosOrbIcon className="h-4 w-4" aria-hidden="true" alt="" />
+        /
+        <StretchHorizontal
+          className="h-4 w-4"
+          aria-hidden="true"
+          focusable="false"
+        />
       </>
     ),
   },
@@ -76,9 +100,11 @@ function SortingMenuItem({
       onSelect={() => onSort(id)}
       className="flex items-center justify-between"
     >
-      <div className="flex flex-1 items-center gap-6">
-        <div className="flex min-w-10 items-center gap-1">{icons}</div>
-        <span className="flex-1 text-left">{label}</span>
+      <div className="flex flex-1 items-center gap-4">
+        <div className="text-muted-foreground flex min-w-20 items-center gap-1">
+          {icons}
+        </div>
+        <span className="min-w-32 flex-1 text-left">{label}</span>
       </div>
       {sortState !== "none" && (
         <span className="text-muted-foreground flex-shrink-0">
@@ -129,10 +155,12 @@ export function MobileSortingControls<TData>({
             <ArrowUpDown className="h-4 w-4" />
             Sort
             {currentSort && (
-              <span className="text-muted-foreground inline-flex items-center font-normal">
-                {sortOptions.find((opt) => opt.id === currentSort.id)?.label ||
-                  currentSort.id}
-                <span className="ml-1">
+              <span className="text-muted-foreground ml-1 inline-flex items-center font-normal">
+                <span className="inline-flex gap-1">
+                  {sortOptions.find((opt) => opt.id === currentSort.id)
+                    ?.icons || currentSort.id}
+                </span>
+                <span className="ml-2">
                   {currentSort.desc ? (
                     <DescendingSortIcon />
                   ) : (

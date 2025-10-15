@@ -26,6 +26,54 @@ import { LowStockInfo } from "./low-stock-info";
 
 import type { AdvancedSettings } from "./advanced-settings-panel";
 
+const compactFormatter = new Intl.NumberFormat("en", {
+  notation: "compact",
+  compactDisplay: "short",
+  maximumFractionDigits: 1,
+});
+
+const standardFormatter = new Intl.NumberFormat("en", {
+  notation: "standard",
+  maximumFractionDigits: 1,
+});
+
+// Reusable tooltip wrapper for compact numbers
+function CompactNumberTooltip({
+  value,
+  children,
+}: {
+  value: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger>{children}</TooltipTrigger>
+      <TooltipContent variant="popover" className="px-3 py-1.5 text-xs">
+        {standardFormatter.format(value)}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+export function renderCompactNumber(value: number) {
+  const parts = compactFormatter.formatToParts(value);
+
+  return (
+    <>
+      {parts.map(({ type, value }, index) => {
+        if (type === "compact") {
+          return (
+            <span key={index} className="text-muted-foreground ml-1 text-xs">
+              {value}
+            </span>
+          );
+        }
+        return <span key={index}>{value}</span>;
+      })}
+    </>
+  );
+}
+
 const DustValueHeader: ColumnDefTemplate<HeaderContext<Item, unknown>> =
   React.memo(
     function DustValueHeaderComponent() {
@@ -71,6 +119,7 @@ export const COLUMN_IDS = {
   CHAOS: "chaos",
   CALCULATED_DUST_VALUE: "calculatedDustValue",
   DUST_PER_CHAOS: "dustPerChaos",
+  DUST_PER_CHAOS_PER_SLOT: "dustPerChaosPerSlot",
   TRADE_LINK: "tradeLink",
   SELECT: "select",
 } as const;
@@ -147,9 +196,12 @@ export const createColumns = (
     },
     cell: ({ row }) => {
       const value = row.getValue(COLUMN_IDS.CHAOS) as number;
+
       return (
         <span className="inline-flex w-full justify-end gap-1">
-          <span>{value}</span>
+          <CompactNumberTooltip value={value}>
+            <span>{renderCompactNumber(value)}</span>
+          </CompactNumberTooltip>
           <ChaosOrbIcon />
         </span>
       );
@@ -165,7 +217,9 @@ export const createColumns = (
       return (
         <span className="block w-full">
           <span className="float-right inline-flex items-center gap-1">
-            <span>{value}</span>
+            <CompactNumberTooltip value={value}>
+              <span>{renderCompactNumber(value)}</span>
+            </CompactNumberTooltip>
             <DustIcon />
           </span>
         </span>
@@ -174,8 +228,8 @@ export const createColumns = (
   },
   {
     accessorKey: COLUMN_IDS.DUST_PER_CHAOS,
-    header: () => <span>Dust per Chaos</span>,
-    size: 140,
+    header: () => <span>Dust / Chaos</span>,
+    size: 130,
     meta: {
       className:
         "text-right tabular-nums relative " +
@@ -189,7 +243,9 @@ export const createColumns = (
       return (
         <span className="block w-full">
           <span className="float-right inline-flex items-center gap-1 align-baseline">
-            <span>{value}</span>
+            <CompactNumberTooltip value={value}>
+              <span>{renderCompactNumber(value)}</span>
+            </CompactNumberTooltip>
             <DustIcon />
             <span className="text-muted-foreground">/</span>
             <ChaosOrbIcon />
@@ -199,9 +255,43 @@ export const createColumns = (
     },
   },
   {
+    accessorKey: COLUMN_IDS.DUST_PER_CHAOS_PER_SLOT,
+    header: () => <span>Dust / Chaos / Slot</span>,
+    size: 160,
+    meta: {
+      className:
+        "text-right tabular-nums relative " +
+        "bg-primary/3 dark:bg-primary/5 " +
+        "shadow-[inset_10px_0_12px_-14px_rgba(0,0,0,0.12)] " +
+        "dark:shadow-[inset_10px_0_12px_-12px_rgba(0,0,0,0.8)] " +
+        "after:content-[''] after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border",
+    },
+    cell: ({ row }) => {
+      const value = row.getValue(COLUMN_IDS.DUST_PER_CHAOS_PER_SLOT) as number;
+      const slots = row.original.slots;
+
+      return (
+        <span className="block w-full">
+          <span className="float-right inline-flex items-center gap-1 align-baseline">
+            <CompactNumberTooltip value={value}>
+              <span>{renderCompactNumber(value)}</span>
+            </CompactNumberTooltip>
+            <DustIcon />
+            <span className="text-muted-foreground">/</span>
+            <ChaosOrbIcon />
+            <span className="text-muted-foreground">/</span>
+            <span className="min-w-9 text-left text-xs">
+              {slots} slot{slots !== 1 ? "s" : ""}
+            </span>
+          </span>
+        </span>
+      );
+    },
+  },
+  {
     id: COLUMN_IDS.TRADE_LINK,
     header: "Trade Link",
-    size: 160,
+    size: 100,
     enableSorting: false,
     cell: ({ row }) => {
       const name = row.getValue(COLUMN_IDS.NAME) as string;
@@ -245,7 +335,9 @@ export const createColumns = (
 
       const content = isLowStock ? (
         <Tooltip>
-          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipTrigger asChild className="cursor-pointer">
+            {button}
+          </TooltipTrigger>
           <TooltipContent className="max-w-[280px] text-sm" variant="popover">
             <LowStockInfo
               name={name}
