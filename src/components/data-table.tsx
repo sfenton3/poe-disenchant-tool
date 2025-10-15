@@ -162,13 +162,13 @@ export function DataTable<TData extends Item, TValue>({
                       key={header.id}
                       style={{ width }}
                       aria-sort={ariaSort as React.AriaAttributes["aria-sort"]}
-                      className={`hover:bg-accent/60 font-normal transition-colors select-none ${isSorted ? "text-primary" : "text-foreground"} `}
+                      className={`font-normal transition-colors select-none ${isSorted ? "text-primary" : "text-foreground"} ${canSort ? "hover:bg-accent/60" : ""}`}
                     >
                       {header.isPlaceholder ? null : (
                         <div
                           role={canSort ? "button" : undefined}
                           tabIndex={canSort ? 0 : -1}
-                          className={`flex w-full items-center justify-between gap-2 rounded-sm py-1 outline-none ${canSort ? "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-offset-background cursor-pointer focus-visible:ring-[3px] focus-visible:ring-offset-2" : ""}`}
+                          className={`flex w-full items-center justify-between gap-2 rounded-sm py-1 outline-none ${canSort ? "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-offset-background focus-visible:ring-[3px] focus-visible:ring-offset-2" : ""}`}
                           onClick={toggleSort}
                           onKeyDown={(e) => {
                             if (!canSort) return;
@@ -216,7 +216,7 @@ export function DataTable<TData extends Item, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={
-                    "even:bg-muted/10 hover:bg-accent/40 data-[state=selected]:bg-muted/60 h-11 data-[state=selected]:opacity-95"
+                    "even:bg-muted/10 data-[state=selected]:bg-muted/40 h-11 data-[state=selected]:opacity-95"
                   }
                 >
                   {row.getVisibleCells().map((cell) => {
