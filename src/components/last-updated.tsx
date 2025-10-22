@@ -50,7 +50,7 @@ export default function LastUpdated({
       const item = window.localStorage.getItem(
         "poe-udt:always-show-refresh:v1",
       );
-      if (item) {
+      if (false) {
         const parsedValue = JSON.parse(item);
         if (typeof parsedValue === "boolean") {
           setAlwaysShowRefresh(parsedValue);
@@ -75,7 +75,7 @@ export default function LastUpdated({
 
       setRelativeTime(relative);
       setAbsoluteTime(absolute);
-      setIsStale(diffInMinutes >= 15);
+      setIsStale(diffInMinutes >= 2);
       setIsRefreshing(false);
     };
 

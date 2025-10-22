@@ -8,7 +8,7 @@ import { Suspense } from "react";
 type Props = { params: Promise<{ league: League }> };
 
 export const dynamicParams = false;
-export const revalidate = 900; // 15 minutes
+export const revalidate = 120; // 2 minutes
 
 export default async function LeaguePage({ params }: Props) {
   const { league } = await params;
