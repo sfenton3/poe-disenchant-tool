@@ -19,6 +19,7 @@ import {
   formatRelativeTime,
 } from "@/lib/dateUtils";
 import { Clock, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -41,6 +42,8 @@ export default function LastUpdated({
   // Feature flag to always show refresh button for development/testing
   // Only read from localStorage if it exists
   const [alwaysShowRefresh, setAlwaysShowRefresh] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     try {
@@ -86,8 +89,9 @@ export default function LastUpdated({
     setIsRefreshing(true);
     try {
       // Call the Server Action to revalidate data
-      const res = await revalidateDataAction(window.location.origin, league);
-      console.debug("revalidateData response:", res);
+      // const res = await revalidateDataAction(window.location.origin, league);
+      // console.debug("revalidateData response:", res);
+      router.refresh();
     } catch (error) {
       console.error("Failed to refresh data:", error);
       toast.error("Failed to refresh data", {
