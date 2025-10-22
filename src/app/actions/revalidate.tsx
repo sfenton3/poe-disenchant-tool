@@ -1,5 +1,5 @@
 import { isValidLeague } from "@/lib/leagues";
-import { revalidateTag, revalidatePath } from "next/cache";
+import { revalidateTag, revalidatePath, refresh } from "next/cache";
 import { cookies } from "next/headers";
 
 function normalizeOrigin(origin: string) {
@@ -144,11 +144,12 @@ export async function revalidateDataAction(
 
   try {
     // Revalidate specific league page
-    revalidateTag(`items-${league}`, "max");
-    revalidatePath(`/${league}`, "page");
-    const fullWarmUrl = `${normalizedOrigin}/${league}`;
-    const warmResult = await warmOrigin(fullWarmUrl);
-    return { ok: true, warmedOrigin: fullWarmUrl, ...warmResult };
+    revalidateTag(`items-${league}`, "mine");
+    refresh();
+    // revalidatePath(`/${league}`, "page");
+    // const fullWarmUrl = `${normalizedOrigin}/${league}`;
+    // const warmResult = await warmOrigin(fullWarmUrl);
+    return { ok: true };
   } catch (err) {
     // If we've thrown a Response via throwHttpError, it already propagated as the proper HTTP code.
     // Any other unexpected errors become 500.
