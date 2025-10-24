@@ -29,7 +29,7 @@ Path of Exile tool for calculating unique item disenchanting efficiency in Kings
 
 ## Tech Stack
 
-- Next.js 15, React 19, TypeScript
+- Next.js 16, React 19, TypeScript
 - Tailwind CSS 4, shadcn/ui
 - TanStack Table for data management
 - Zod for data validation
