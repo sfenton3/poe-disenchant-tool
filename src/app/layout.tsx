@@ -8,6 +8,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { BASE_URL, DESCRIPTION, TITLE } from "@/lib/constants";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: {
@@ -82,6 +84,8 @@ export default function RootLayout({
             </DataTableStateProvider>
           </ThemeProvider>
         </TooltipProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
