@@ -8,3 +8,6 @@ coverage
 
 # Lock file
 pnpm-lock.yaml
+
+# Google verification file
+public/google2379b57d85212dd8.html
