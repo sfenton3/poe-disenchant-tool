@@ -1,7 +1,8 @@
 import { unstable_cache } from "next/cache";
-import { getDustData } from "./dust";
-import { League } from "./leagues";
-import { AllowedUnique, getPriceData } from "./prices";
+import { getDustData } from "@/lib/dust";
+import { League } from "@/lib/leagues";
+import { AllowedUnique, getPriceData } from "@/lib/prices";
+import { ITEMS_TO_IGNORE } from "./ignore-list";
 
 export type Item = {
   name: string;
@@ -17,13 +18,6 @@ export type Item = {
   type: AllowedUnique;
   icon: string;
 };
-
-const ITEMS_TO_IGNORE = [
-  "Curio of Consumption",
-  "Curio of Absorption",
-  "Curio of Potential",
-  "Curio of Decay",
-];
 
 const createUniqueId = (name: string, variant?: string) =>
   `${name}${variant ? `-${variant}` : ""}`;
