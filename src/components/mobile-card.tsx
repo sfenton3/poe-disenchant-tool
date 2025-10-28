@@ -40,7 +40,7 @@ const SelectionCheckbox = React.memo(function SelectionCheckbox({
 }) {
   return (
     <Checkbox
-      className="size-6"
+      className="border-primary/30 hover:border-primary/40 size-7"
       checked={checked}
       onCheckedChange={(v) => onChange(v === true)}
       aria-label={label}
@@ -161,7 +161,7 @@ function MobileCardComponent<TData extends Item>({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 pt-1.5">
+        <div className="flex items-center gap-3 pt-1.5">
           <SelectionCheckbox
             checked={isSelected}
             onChange={handleSelect}
