@@ -356,7 +356,7 @@ export const createColumns = (
       return (
         <div className="flex items-center justify-center">
           <Checkbox
-            className="size-6"
+            className="border-primary/30 hover:border-primary/40 size-7"
             checked={row.getIsSelected()}
             onCheckedChange={(v) => row.toggleSelected(v === true)}
             aria-label={`Mark ${name} as completed`}
