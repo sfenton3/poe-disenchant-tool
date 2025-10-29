@@ -19,21 +19,21 @@ export default async function LeagueContentServer({
   const lastUpdated = new Date(lastUpdatedTimestamp);
 
   return (
-    <>
-      <h4 className="font-italic text-muted-foreground text-sm">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="font-italic text-muted-foreground text-sm">
         <LastUpdatedClient
           timestamp={lastUpdated}
           league={league}
           revalidateDataAction={revalidateDataAction}
         />
-      </h4>
-      <div className="xl:py-4">
+      </div>
+      <section className="flex flex-1 flex-col justify-center">
         <SharedDataView
           items={items}
           league={league}
           lowStockThreshold={lowStockThreshold}
         />
-      </div>
-    </>
+      </section>
+    </div>
   );
 }
