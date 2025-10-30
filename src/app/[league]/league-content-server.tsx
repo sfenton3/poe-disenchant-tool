@@ -27,7 +27,7 @@ export default async function LeagueContentServer({
           revalidateDataAction={revalidateDataAction}
         />
       </div>
-      <section className="flex flex-1 flex-col justify-center">
+      <section className="py-1">
         <SharedDataView
           items={items}
           league={league}
