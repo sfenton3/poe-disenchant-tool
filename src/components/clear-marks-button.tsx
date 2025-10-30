@@ -13,7 +13,7 @@ export function ClearMarksButton<TData>({
   onClearMarks,
   className,
 }: ClearMarksButtonProps<TData>) {
-  const numberOfSelectedrows = Object.keys(
+  const numberOfSelectedRows = Object.keys(
     table.getState().rowSelection,
   ).length;
 
@@ -24,11 +24,11 @@ export function ClearMarksButton<TData>({
         onClick={onClearMarks}
         title="Clear all marked rows"
         aria-label="Clear all marked rows"
-        disabled={numberOfSelectedrows === 0}
+        disabled={numberOfSelectedRows === 0}
         className={cn("gap-1", className)}
       >
         Clear marks{" "}
-        <span className="tabular-nums">({numberOfSelectedrows})</span>
+        <span className="tabular-nums">({numberOfSelectedRows})</span>
       </Button>
     )
   );

@@ -23,3 +23,7 @@ export function getLeagueName(slug: League) {
 export function getLeagueApiName(slug: League) {
   return LEAGUES[slug].apiName;
 }
+
+export function getLeagueFromName(name: string): League | undefined {
+  return LEAGUE_SLUGS.find((slug) => LEAGUES[slug].name === name);
+}
