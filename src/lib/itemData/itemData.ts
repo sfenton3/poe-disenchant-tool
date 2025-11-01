@@ -1,8 +1,8 @@
 import { unstable_cache } from "next/cache";
 
-import { getDustData } from "@/lib/dust";
+import { Item as DustItem, getDustData } from "@/lib/dust";
 import { League } from "@/lib/leagues";
-import { AllowedUnique, getPriceData } from "@/lib/prices";
+import { AllowedUnique, getPriceData, Item as PriceItem } from "@/lib/prices";
 import { ITEMS_TO_IGNORE } from "./ignore-list";
 
 export type Item = {
@@ -18,6 +18,7 @@ export type Item = {
   dustPerChaosPerSlot: number;
   type: AllowedUnique;
   icon: string;
+  shouldCatalyst: boolean;
 };
 
 const createUniqueId = (name: string, variant?: string) =>
@@ -41,15 +42,11 @@ const uncached__getItems = async (league: League) => {
       continue;
     }
 
-    const calculatedDustValue =
-      priceItem.type === "UniqueAccessory"
-        ? dustItem.dustValIlvl84
-        : dustItem.dustValIlvl84Q20;
-
-    const dustPerChaos =
-      priceItem.chaos > 0
-        ? Math.round(calculatedDustValue / priceItem.chaos)
-        : 0;
+    const {
+      dustValue: calculatedDustValue,
+      dustPerChaos,
+      catalyst: shouldCatalyst,
+    } = calculateDustEfficiency(priceItem, dustItem);
 
     merged.push({
       id: id++,
@@ -59,11 +56,12 @@ const uncached__getItems = async (league: League) => {
       listingCount: priceItem.listingCount,
       variant: priceItem.baseType,
       calculatedDustValue,
-      dustPerChaos: dustPerChaos,
+      dustPerChaos: Math.round(dustPerChaos),
       slots: dustItem.slots,
       dustPerChaosPerSlot: Math.round(dustPerChaos / dustItem.slots),
       type: priceItem.type,
       icon: priceItem.icon,
+      shouldCatalyst: shouldCatalyst,
     });
   }
 
@@ -75,6 +73,42 @@ const uncached__getItems = async (league: League) => {
     lowStockThreshold,
   };
 };
+
+function calculateDustEfficiency(priceItem: PriceItem, dustItem: DustItem) {
+  if (priceItem.type !== "UniqueAccessory") {
+    // Weapon or Armor, always cheap to quality up
+    return {
+      dustValue: dustItem.dustValIlvl84Q20,
+      dustPerChaos: dustItem.dustValIlvl84Q20 / priceItem.chaos,
+      catalyst: false,
+    };
+  }
+
+  // For jewelery, calculate if it's worth it to add quality
+
+  // Assume 1c per catalyst
+  const costToAddQuality = 20; // 20 catalysts, 1c each
+
+  const defaultDustPerChaos = dustItem.dustValIlvl84 / priceItem.chaos;
+  const catalystedDustPerChaos =
+    dustItem.dustValIlvl84Q20 / (priceItem.chaos + costToAddQuality);
+
+  if (catalystedDustPerChaos > defaultDustPerChaos) {
+    // Quality up is worth it
+    return {
+      dustValue: dustItem.dustValIlvl84Q20,
+      dustPerChaos: catalystedDustPerChaos,
+      catalyst: true,
+    };
+  } else {
+    // Quality up is not worth it
+    return {
+      dustValue: dustItem.dustValIlvl84,
+      dustPerChaos: defaultDustPerChaos,
+      catalyst: false,
+    };
+  }
+}
 
 /**
  * Calculates the low stock threshold as the 10th percentile of listing counts across items.
