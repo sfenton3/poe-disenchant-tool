@@ -1,6 +1,7 @@
 import type { CheckedState } from "@/components/ui/checkbox";
 import type { ListingTimeFilter } from "@/lib/listing-time-filter";
 import * as React from "react";
+import { zx } from "@traversable/zod";
 import equal from "fast-deep-equal";
 import {
   ChevronDown,
@@ -44,14 +45,19 @@ export const AdvancedSettingsSchema = z.object({
   onlineStatus: OnlineStatusSchema.prefault("available"),
 });
 
+export const advancedSettingsDeepEqual = zx.deepEqual(AdvancedSettingsSchema);
+
 export type AdvancedSettings = z.infer<typeof AdvancedSettingsSchema>;
 
 // Default values derived from schema
 export const DEFAULT_ADVANCED_SETTINGS: AdvancedSettings =
   AdvancedSettingsSchema.parse({});
+
 interface AdvancedSettingsPanelProps {
   settings: AdvancedSettings;
-  onSettingsChange: (settings: AdvancedSettings) => void;
+  onSettingsChange: (
+    update: AdvancedSettings | ((prev: AdvancedSettings) => AdvancedSettings),
+  ) => void;
   className?: string;
 }
 
@@ -67,33 +73,76 @@ const getMinimumItemLevelIcon: (iLvl: number) => React.ReactNode = (iLvl) => {
   }
 };
 
+const ListingTimeFilterSelector = React.memo<{
+  value: ListingTimeFilter;
+  onChange: (value: string) => void;
+}>(function ListingTimeFilterSelector({ value, onChange }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <Label htmlFor="listing-time-filter" className="text-sm">
+          Listing Time
+        </Label>
+      </div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id="listing-time-filter">
+          <SelectValue placeholder="Select time filter" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="any">Any time</SelectItem>
+          <SelectItem value="1hour">Up to an hour ago</SelectItem>
+          <SelectItem value="3hours">Up to 3 hours ago</SelectItem>
+          <SelectItem value="12hours">Up to 12 hours ago</SelectItem>
+          <SelectItem value="1day">Up to a day ago</SelectItem>
+          <SelectItem value="3days">Up to 3 days ago</SelectItem>
+          <SelectItem value="1week">Up to a week ago</SelectItem>
+        </SelectContent>
+      </Select>
+      <p className="text-muted-foreground text-xs">
+        Filter trade listings by when they were posted.
+      </p>
+    </div>
+  );
+});
+
 export function AdvancedSettingsPanel({
   settings,
   onSettingsChange,
   className,
 }: AdvancedSettingsPanelProps) {
+  "use memo";
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const handleMinItemLevelChange = (value: number[]) => {
-    onSettingsChange({
-      ...settings,
-      minItemLevel: value[0],
-    });
-  };
+  const handleMinItemLevelChange = React.useCallback(
+    (value: number[]) => {
+      onSettingsChange((prev) => ({
+        ...prev,
+        minItemLevel: value[0],
+      }));
+    },
+    [onSettingsChange],
+  );
 
-  const handleIncludeCorruptedChange = (checked: CheckedState) => {
-    onSettingsChange({
-      ...settings,
-      includeCorrupted: checked === true,
-    });
-  };
+  const handleIncludeCorruptedChange = React.useCallback(
+    (checked: CheckedState) => {
+      onSettingsChange((prev) => ({
+        ...prev,
+        includeCorrupted: checked === true,
+      }));
+    },
+    [onSettingsChange],
+  );
 
-  const handleListingTimeFilterChange = (value: string) => {
-    onSettingsChange({
-      ...settings,
-      listingTimeFilter: value as ListingTimeFilter,
-    });
-  };
+  const handleListingTimeFilterChange = React.useCallback(
+    (value: string) => {
+      onSettingsChange((prev) => ({
+        ...prev,
+        listingTimeFilter: value as ListingTimeFilter,
+      }));
+    },
+    [onSettingsChange],
+  );
 
   const handleOnlineStatusChange = (value: string) => {
     onSettingsChange({
@@ -133,20 +182,19 @@ export function AdvancedSettingsPanel({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 {getMinimumItemLevelIcon(settings.minItemLevel)}
-                <Label htmlFor="min-item-level" className="text-sm">
+                <Label id="min-item-level" className="text-sm">
                   Minimum Item Level
                 </Label>
               </div>
               <div className="px-2">
                 <Slider
-                  id="min-item-level"
+                  aria-labelledby="min-item-level"
                   min={65}
                   max={84}
                   step={1}
                   value={[settings.minItemLevel]}
                   onValueChange={handleMinItemLevelChange}
                   className="w-full py-1"
-                  aria-label="Minimum item level"
                 />
               </div>
               <div className="text-muted-foreground flex justify-between text-xs">
@@ -234,34 +282,10 @@ export function AdvancedSettingsPanel({
 
           <Separator />
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <Label htmlFor="listing-time-filter" className="text-sm">
-                Listing Time
-              </Label>
-            </div>
-            <Select
-              value={settings.listingTimeFilter}
-              onValueChange={handleListingTimeFilterChange}
-            >
-              <SelectTrigger id="listing-time-filter">
-                <SelectValue placeholder="Select time filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any time</SelectItem>
-                <SelectItem value="1hour">Up to an hour ago</SelectItem>
-                <SelectItem value="3hours">Up to 3 hours ago</SelectItem>
-                <SelectItem value="12hours">Up to 12 hours ago</SelectItem>
-                <SelectItem value="1day">Up to a day ago</SelectItem>
-                <SelectItem value="3days">Up to 3 days ago</SelectItem>
-                <SelectItem value="1week">Up to a week ago</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-muted-foreground text-xs">
-              Filter trade listings by when they were posted.
-            </p>
-          </div>
+          <ListingTimeFilterSelector
+            value={settings.listingTimeFilter}
+            onChange={handleListingTimeFilterChange}
+          />
 
           <div className="flex gap-2 pt-2">
             <Button
