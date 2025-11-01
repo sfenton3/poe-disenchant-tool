@@ -53,7 +53,9 @@ Open http://localhost:3000
 
 - **Dust Value**:
   - Weapons/armors use ilvl 84, q20 values
-  - Accessories use ilvl84, q0 values
+  - Accessories use calculation if it's worth using catalysts (assuming 1c per catalyst)
+    - If yes, use ilvl 84, q20 values
+    - If no, use ilvl 84, q0 values
 - **Dust per Chaos**: `dustValue / chaosPrice` (higher = more efficient)
 - **Variant Handling**: Deduplicates 5L/6Ls, relics and base variants and keeps the cheapest options
 
