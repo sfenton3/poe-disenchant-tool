@@ -79,6 +79,7 @@ const uncached__getCheapestCatalyst = async (
 
   const validItems = catalystItems.filter((i) => i.primaryValue !== 0);
   if (validItems.length === 0) {
+    console.warn("No valid catalyst items found");
     return null;
   }
 
