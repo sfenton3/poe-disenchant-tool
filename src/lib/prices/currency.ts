@@ -75,6 +75,12 @@ const getCatalystItems = async (league: League): Promise<CatalystItem[]> => {
 const uncached__getCheapestCatalyst = async (
   league: League,
 ): Promise<CatalystItem | null> => {
+  if (isDevelopment) {
+    return {
+      id: "dev-catalyst",
+      primaryValue: 1,
+    };
+  }
   const catalystItems = await getCatalystItems(league);
 
   const validItems = catalystItems.filter((i) => i.primaryValue !== 0);
