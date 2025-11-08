@@ -99,10 +99,15 @@ const uncached__getCheapestCatalyst = async (
   return cheapest;
 };
 
-export const getCheapestCatalyst = unstable_cache(
-  async (league) => uncached__getCheapestCatalyst(league),
-  [],
-  {
-    revalidate: 86_400, // 1 day
-  },
-);
+export const getCheapestCatalyst = async (
+  league: League,
+): Promise<CatalystItem | null> => {
+  return unstable_cache(
+    async () => uncached__getCheapestCatalyst(league),
+    [league],
+    {
+      tags: [`cheapest-catalyst-${league}`],
+      revalidate: 86_400, // 1 day
+    },
+  )();
+};
