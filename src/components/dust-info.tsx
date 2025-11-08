@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 
 export function DustInfo() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 text-wrap">
       <div className="flex items-center gap-2">
         <Sparkles className="size-4 text-green-600 dark:text-green-400" />
         <h4 className="text-sm font-semibold">Item Quality</h4>
