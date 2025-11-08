@@ -59,12 +59,7 @@ const uncached__getItems = async (league: League) => {
       dustValue: calculatedDustValue,
       dustPerChaos,
       catalyst: shouldCatalyst,
-    } = await calculateDustEfficiency(
-      priceItem,
-      dustItem,
-      league,
-      catalystPrice,
-    );
+    } = await calculateDustEfficiency(priceItem, dustItem, catalystPrice);
 
     merged.push({
       id: id++,
@@ -95,7 +90,6 @@ const uncached__getItems = async (league: League) => {
 async function calculateDustEfficiency(
   priceItem: PriceItem,
   dustItem: DustItem,
-  league: League,
   catalystPrice: number,
 ) {
   if (priceItem.type !== "UniqueAccessory") {
