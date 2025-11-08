@@ -2,7 +2,12 @@ import { unstable_cache } from "next/cache";
 
 import { Item as DustItem, getDustData } from "@/lib/dust";
 import { League } from "@/lib/leagues";
-import { AllowedUnique, getPriceData, Item as PriceItem } from "@/lib/prices";
+import {
+  AllowedUnique,
+  getCheapestCatalyst,
+  getPriceData,
+  Item as PriceItem,
+} from "@/lib/prices";
 import { ITEMS_TO_IGNORE } from "./ignore-list";
 
 export type Item = {
@@ -32,6 +37,14 @@ const uncached__getItems = async (league: League) => {
   const merged: Item[] = [];
   let id = 0;
 
+  // For jewelery, we need to calculate if it's worth it to add quality
+  const maybeCatalystPrice = await getCheapestCatalyst(league);
+
+  // Fallback to 1c if no data
+  const catalystPrice = maybeCatalystPrice
+    ? maybeCatalystPrice.primaryValue
+    : 1;
+
   for (const priceItem of priceData) {
     if (ITEMS_TO_IGNORE.includes(priceItem.name)) continue;
     const dustItem = dustMap.get(priceItem.name);
@@ -46,7 +59,7 @@ const uncached__getItems = async (league: League) => {
       dustValue: calculatedDustValue,
       dustPerChaos,
       catalyst: shouldCatalyst,
-    } = calculateDustEfficiency(priceItem, dustItem);
+    } = await calculateDustEfficiency(priceItem, dustItem, catalystPrice);
 
     merged.push({
       id: id++,
@@ -74,7 +87,11 @@ const uncached__getItems = async (league: League) => {
   };
 };
 
-function calculateDustEfficiency(priceItem: PriceItem, dustItem: DustItem) {
+async function calculateDustEfficiency(
+  priceItem: PriceItem,
+  dustItem: DustItem,
+  catalystPrice: number,
+) {
   if (priceItem.type !== "UniqueAccessory") {
     // Weapon or Armor, always cheap to quality up
     return {
@@ -84,11 +101,7 @@ function calculateDustEfficiency(priceItem: PriceItem, dustItem: DustItem) {
     };
   }
 
-  // For jewelery, calculate if it's worth it to add quality
-
-  // Assume 1c per catalyst
-  const costToAddQuality = 20; // 20 catalysts, 1c each
-
+  const costToAddQuality = catalystPrice * 20; // 20 catalysts
   const defaultDustPerChaos = dustItem.dustValIlvl84 / priceItem.chaos;
   const catalystedDustPerChaos =
     dustItem.dustValIlvl84Q20 / (priceItem.chaos + costToAddQuality);

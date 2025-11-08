@@ -152,7 +152,7 @@ function CatalystBadge() {
         </Badge>
       </PopoverTrigger>
 
-      <PopoverContent className="max-w-[290px] min-w-77 text-sm">
+      <PopoverContent className="max-w-[280px] text-sm">
         <CatalystInfo />
       </PopoverContent>
     </Popover>
