@@ -85,7 +85,7 @@ const uncached__getCheapestCatalyst = async (
 
   const validItems = catalystItems.filter((i) => i.primaryValue !== 0);
   if (validItems.length === 0) {
-    console.warn("No valid catalyst items found");
+    console.warn("No valid catalysts items found for league", league);
     return null;
   }
 
@@ -93,7 +93,9 @@ const uncached__getCheapestCatalyst = async (
     item.primaryValue < min.primaryValue ? item : min,
   );
 
-  console.log(`Cheapest catalyst: ${cheapest.id} at ${cheapest.primaryValue}`);
+  console.log(
+    `Cheapest catalyst: ${cheapest.id} at ${cheapest.primaryValue} in league ${league}`,
+  );
   return cheapest;
 };
 
