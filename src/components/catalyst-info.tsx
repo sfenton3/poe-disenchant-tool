@@ -21,7 +21,7 @@ export function CatalystInfo() {
             <Badge variant="secondary">Investment</Badge>
           </div>
           <div>
-            <Badge variant="outline">20 Catalysts (assumed 20c)</Badge>
+            <Badge variant="outline">20 Catalysts</Badge>
           </div>
 
           <div>
