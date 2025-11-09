@@ -88,9 +88,7 @@ export function PriceFilter<TData extends Item>({
       const updatedRange = updateUpperBound(
         sliderValue[0], // Direct value since upper bound uses linear scaling
         currentRange,
-        {
-          max,
-        },
+        { max },
       );
       const normalizedFilter = createNormalizedFilterValue(
         updatedRange,
