@@ -53,6 +53,7 @@ Open http://localhost:3000
 
 - **Dust Value**:
   - Weapons/armors use ilvl 84, q20 values
+    - Except quivers (cannot have quality) - they use ilvl 84, q0 values
   - Accessories use calculation if it's worth using catalysts, based on current market price
     - If yes, use ilvl 84, q20 values - catalyst suggestion is shown in the UI
     - If no, use ilvl 84, q0 values
