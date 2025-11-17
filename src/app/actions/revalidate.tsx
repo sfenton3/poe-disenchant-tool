@@ -1,6 +1,7 @@
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
+import { getItems } from "@/lib/itemData";
 import { isValidLeague } from "@/lib/leagues";
 
 function normalizeOrigin(origin: string) {
@@ -94,11 +95,8 @@ async function warmOrigin(fullWarmUrl: string) {
 
   const res = await fetch(fullWarmUrl, {
     method: "GET",
-    // cache: "no-store",
     redirect: "manual", // don't follow redirects
     headers: {
-      //   pragma: "no-cache",
-      //   "cache-control": "no-cache",
       cookie: requestCookies,
     },
   });
@@ -139,17 +137,35 @@ export async function revalidateDataAction(
     throwHttpError(`Invalid league parameter: ${league}`, 400);
   }
 
-  const allowlist = buildAllowlistOrigins();
-  console.debug("allowlist", allowlist);
-  const normalizedOrigin = validateOriginAllowed(originFromClient, allowlist);
+  const now = Date.now();
+  const { lastUpdated } = await getItems(league);
+
+  const age = now - lastUpdated;
+
+  // 30 minutes
+  if (age < 30 * 60 * 1000) {
+    console.debug("Data was not revalidated");
+    // Client will call router.refresh() to get the latest data
+    return { didRevalidate: false, lastUpdated: lastUpdated };
+  }
 
   try {
+    const allowlist = buildAllowlistOrigins();
+    console.debug("allowlist", allowlist);
+    const normalizedOrigin = validateOriginAllowed(originFromClient, allowlist);
+
     // Revalidate specific league page
-    revalidateTag(`items-${league}`, "max");
     revalidatePath(`/${league}`, "page");
     const fullWarmUrl = `${normalizedOrigin}/${league}`;
-    const warmResult = await warmOrigin(fullWarmUrl);
-    return { ok: true, warmedOrigin: fullWarmUrl, ...warmResult };
+    await warmOrigin(fullWarmUrl);
+
+    return {
+      // Next.js should automatically deliver newest RSC data to client, but sometimes doesn't
+      didRevalidate: true,
+      // Below timestamp is not exactly the data timestamp, but we can't retrieve it at this point
+      // because cache can still be stale
+      lastUpdated: now,
+    };
   } catch (err) {
     // If we've thrown a Response via throwHttpError, it already propagated as the proper HTTP code.
     // Any other unexpected errors become 500.
