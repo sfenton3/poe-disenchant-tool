@@ -1,4 +1,5 @@
 import type { Item } from "@/lib/itemData";
+import type { PriceFilterValue } from "@/lib/price-filter";
 import type { Column } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import { ChevronDown, Filter } from "lucide-react";
@@ -17,7 +18,6 @@ import {
   getCurrentRange,
   getLowerBoundLinearValue,
   getLowerBoundSliderValue,
-  hasActiveFilter,
   hasMaxFilter,
   hasMinFilter,
   resetFilter,
@@ -27,8 +27,6 @@ import {
 } from "@/lib/price-filter";
 import { cn } from "@/lib/utils";
 import { ChaosOrbIcon } from "./chaos-orb-icon";
-
-export type { PriceFilterValue } from "@/lib/price-filter";
 
 interface PriceFilterProps<TData> {
   column: Column<TData, unknown> | undefined;
@@ -80,19 +78,10 @@ const renderMinPriceDescription = (min: number | undefined) => (
 );
 
 const renderFilterStatusDescription = (
-  isFilterActive: boolean,
-  currentRange: { min?: number; max?: number },
-  defaults: { min: number; max: number },
+  currentRange: PriceFilterValue,
+  hasMin: boolean,
+  hasMax: boolean,
 ) => {
-  if (!isFilterActive) {
-    return (
-      <span className="inline-flex items-center gap-1">Showing all items.</span>
-    );
-  }
-
-  const hasMin = hasMinFilter(currentRange, { min: defaults.min });
-  const hasMax = hasMaxFilter(currentRange, { max: defaults.max });
-
   if (hasMin && hasMax) {
     return renderPriceRangeDescription(currentRange.min, currentRange.max);
   }
@@ -102,6 +91,10 @@ const renderFilterStatusDescription = (
   if (hasMax) {
     return renderMaxPriceDescription(currentRange.max);
   }
+
+  return (
+    <span className="inline-flex items-center gap-1">Showing all items.</span>
+  );
 };
 
 export function PriceFilter<TData extends Item>({
@@ -117,56 +110,50 @@ export function PriceFilter<TData extends Item>({
 
   const currentRange = getCurrentRange(column, defaults);
 
-  // Shared helper to update lower bound using a linear price value (in chaos)
-  const updateLowerBoundPrice = useCallback(
-    (newPrice: number) => {
-      const effectiveMax = currentRange.max ?? defaults.max;
-      const clamped = Math.round(
-        Math.min(Math.max(newPrice, defaults.min), effectiveMax),
-      );
+  const hasMin = hasMinFilter(currentRange, defaults);
+  const hasMax = hasMaxFilter(currentRange, defaults);
 
-      const updatedRange = updateLowerBound(clamped, currentRange, {
-        max: defaults.max,
-      });
-      const normalizedFilter = createNormalizedFilterValue(
-        updatedRange,
-        defaults,
-      );
-      setFilterValue(column, normalizedFilter);
-    },
-    [column, currentRange, defaults],
-  );
+  const isFilterActive = hasMin || hasMax;
+
+  // Shared helper to update lower bound using a linear price value (in chaos)
+  const updateLowerBoundPrice = (newPrice: number) => {
+    const effectiveMax = currentRange.max ?? defaults.max;
+    const clamped = Math.round(
+      Math.min(Math.max(newPrice, defaults.min), effectiveMax),
+    );
+
+    const updatedRange = updateLowerBound(clamped, currentRange, {
+      max: defaults.max,
+    });
+    const normalizedFilter = createNormalizedFilterValue(
+      updatedRange,
+      defaults,
+    );
+    setFilterValue(column, normalizedFilter);
+  };
 
   // Handles slider (mouse/touch) interaction — converts from slider value (0–100) to log scale
-  const handleLowerBoundChange = useCallback(
-    (sliderValue: number[]) => {
-      const newLinearValue = getLowerBoundLinearValue(
-        column,
-        sliderValue[0],
-        defaults,
-      );
-      updateLowerBoundPrice(newLinearValue);
-    },
-    [column, defaults, updateLowerBoundPrice],
-  );
+  const handleLowerBoundChange = (sliderValue: number[]) => {
+    const newLinearValue = getLowerBoundLinearValue(
+      column,
+      sliderValue[0],
+      defaults,
+    );
+    updateLowerBoundPrice(newLinearValue);
+  };
 
-  const handleUpperBoundChange = useCallback(
-    (sliderValue: number[]) => {
-      const updatedRange = updateUpperBound(
-        sliderValue[0], // Direct value since upper bound uses linear scaling
-        currentRange,
-        { max },
-      );
-      const normalizedFilter = createNormalizedFilterValue(
-        updatedRange,
-        defaults,
-      );
-      setFilterValue(column, normalizedFilter);
-    },
-    [column, currentRange, defaults, max],
-  );
-
-  const isFilterActive = hasActiveFilter(column, defaults);
+  const handleUpperBoundChange = (sliderValue: number[]) => {
+    const updatedRange = updateUpperBound(
+      sliderValue[0], // Direct value since upper bound uses linear scaling
+      currentRange,
+      { max },
+    );
+    const normalizedFilter = createNormalizedFilterValue(
+      updatedRange,
+      defaults,
+    );
+    setFilterValue(column, normalizedFilter);
+  };
 
   const handleReset = useCallback(() => {
     resetFilter(column);
@@ -178,41 +165,38 @@ export function PriceFilter<TData extends Item>({
   }, []);
 
   // Handles keyboard events on the slider
-  const handleLowerBoundKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      // let Home/End behave as usual
-      if (e.key === "Home" || e.key === "End") return;
+  const handleLowerBoundKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // let Home/End behave as usual
+    if (e.key === "Home" || e.key === "End") return;
 
-      const SMALL_STEP = 1;
-      const LARGE_STEP = 10;
+    const SMALL_STEP = 1;
+    const LARGE_STEP = 10;
 
-      let delta = 0;
-      switch (e.key) {
-        case "ArrowRight":
-        case "ArrowUp":
-          delta = e.shiftKey ? LARGE_STEP : SMALL_STEP;
-          break;
-        case "ArrowLeft":
-        case "ArrowDown":
-          delta = e.shiftKey ? -LARGE_STEP : -SMALL_STEP;
-          break;
-        case "PageUp":
-          delta = LARGE_STEP;
-          break;
-        case "PageDown":
-          delta = -LARGE_STEP;
-          break;
-        default:
-          return; // let all other keys pass through
-      }
+    let delta = 0;
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowUp":
+        delta = e.shiftKey ? LARGE_STEP : SMALL_STEP;
+        break;
+      case "ArrowLeft":
+      case "ArrowDown":
+        delta = e.shiftKey ? -LARGE_STEP : -SMALL_STEP;
+        break;
+      case "PageUp":
+        delta = LARGE_STEP;
+        break;
+      case "PageDown":
+        delta = -LARGE_STEP;
+        break;
+      default:
+        return; // let all other keys pass through
+    }
 
-      e.preventDefault();
-      const effectiveMin = currentRange.min ?? defaults.min;
-      const newPrice = effectiveMin + delta;
-      updateLowerBoundPrice(newPrice);
-    },
-    [currentRange.min, defaults.min, updateLowerBoundPrice],
-  );
+    e.preventDefault();
+    const effectiveMin = currentRange.min ?? defaults.min;
+    const newPrice = effectiveMin + delta;
+    updateLowerBoundPrice(newPrice);
+  };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -342,11 +326,7 @@ export function PriceFilter<TData extends Item>({
               </Badge>
             </div>
             <div className="text-muted-foreground text-xs leading-[18px]">
-              {renderFilterStatusDescription(
-                isFilterActive,
-                currentRange,
-                defaults,
-              )}
+              {renderFilterStatusDescription(currentRange, hasMin, hasMax)}
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import type { PriceFilterValue } from "@/components/price-filter";
+import type { PriceFilterValue } from "@/lib/price-filter";
 
 import { ChaosOrbIcon } from "@/components/chaos-orb-icon";
 import { Badge } from "@/components/ui/badge";
