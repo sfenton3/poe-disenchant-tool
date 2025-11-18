@@ -37,6 +37,73 @@ interface PriceFilterProps<TData> {
   className?: string;
 }
 
+// Helper functions for rendering price filter descriptions
+const renderPriceRangeDescription = (
+  min: number | undefined,
+  max: number | undefined,
+) => (
+  <>
+    Showing items between{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{min}</span>
+      <ChaosOrbIcon />
+    </span>{" "}
+    and{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{max}</span>
+      <ChaosOrbIcon />
+    </span>
+    .
+  </>
+);
+
+const renderMaxPriceDescription = (max: number | undefined) => (
+  <>
+    Showing items{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{max}</span>
+      <ChaosOrbIcon />
+    </span>{" "}
+    and below.
+  </>
+);
+
+const renderMinPriceDescription = (min: number | undefined) => (
+  <>
+    Showing items{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{min}</span>
+      <ChaosOrbIcon />
+    </span>{" "}
+    and above.
+  </>
+);
+
+const renderFilterStatusDescription = (
+  isFilterActive: boolean,
+  currentRange: { min?: number; max?: number },
+  defaults: { min: number; max: number },
+) => {
+  if (!isFilterActive) {
+    return (
+      <span className="inline-flex items-center gap-1">Showing all items.</span>
+    );
+  }
+
+  const hasMin = hasMinFilter(currentRange, { min: defaults.min });
+  const hasMax = hasMaxFilter(currentRange, { max: defaults.max });
+
+  if (hasMin && hasMax) {
+    return renderPriceRangeDescription(currentRange.min, currentRange.max);
+  }
+  if (hasMin) {
+    return renderMinPriceDescription(currentRange.min);
+  }
+  if (hasMax) {
+    return renderMaxPriceDescription(currentRange.max);
+  }
+};
+
 export function PriceFilter<TData extends Item>({
   column,
   min,
@@ -275,46 +342,10 @@ export function PriceFilter<TData extends Item>({
               </Badge>
             </div>
             <div className="text-muted-foreground text-xs leading-[18px]">
-              {isFilterActive ? (
-                hasMaxFilter(currentRange, { max }) ? (
-                  hasMinFilter(currentRange, { min }) ? (
-                    <>
-                      Showing items between{" "}
-                      <span className="inline-flex items-center gap-1">
-                        <span className="leading-none">{currentRange.min}</span>
-                        <ChaosOrbIcon />
-                      </span>{" "}
-                      and{" "}
-                      <span className="inline-flex items-center gap-1">
-                        <span className="leading-none">{currentRange.max}</span>
-                        <ChaosOrbIcon />
-                      </span>
-                      .
-                    </>
-                  ) : (
-                    <>
-                      Showing items{" "}
-                      <span className="inline-flex items-center gap-1">
-                        <span className="leading-none">{currentRange.max}</span>
-                        <ChaosOrbIcon />
-                      </span>{" "}
-                      and below.
-                    </>
-                  )
-                ) : (
-                  <>
-                    Showing items{" "}
-                    <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.min}</span>
-                      <ChaosOrbIcon />
-                    </span>{" "}
-                    and above.
-                  </>
-                )
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  Showing all items.
-                </span>
+              {renderFilterStatusDescription(
+                isFilterActive,
+                currentRange,
+                defaults,
               )}
             </div>
           </div>
