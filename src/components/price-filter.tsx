@@ -117,13 +117,11 @@ export function PriceFilter<TData extends Item>({
 
   // Shared helper to update lower bound using a linear price value (in chaos)
   const updateLowerBoundPrice = (newPrice: number) => {
-    const effectiveMax = currentRange.max ?? defaults.max;
-    const clamped = Math.round(
-      Math.min(Math.max(newPrice, defaults.min), effectiveMax),
-    );
+    const effectiveMax = currentRange.max ?? max;
+    const clamped = Math.round(Math.min(Math.max(newPrice, min), effectiveMax));
 
     const updatedRange = updateLowerBound(clamped, currentRange, {
-      max: defaults.max,
+      max,
     });
     const normalizedFilter = createNormalizedFilterValue(
       updatedRange,
@@ -131,7 +129,6 @@ export function PriceFilter<TData extends Item>({
     );
     setFilterValue(column, normalizedFilter);
   };
-
   // Handles slider (mouse/touch) interaction — converts from slider value (0–100) to log scale
   const handleLowerBoundChange = (sliderValue: number[]) => {
     const newLinearValue = getLowerBoundLinearValue(
@@ -154,7 +151,6 @@ export function PriceFilter<TData extends Item>({
     );
     setFilterValue(column, normalizedFilter);
   };
-
   const handleReset = useCallback(() => {
     resetFilter(column);
   }, [column]);
@@ -193,7 +189,7 @@ export function PriceFilter<TData extends Item>({
     }
 
     e.preventDefault();
-    const effectiveMin = currentRange.min ?? defaults.min;
+    const effectiveMin = currentRange.min ?? min;
     const newPrice = effectiveMin + delta;
     updateLowerBoundPrice(newPrice);
   };
@@ -258,14 +254,12 @@ export function PriceFilter<TData extends Item>({
                   <ChaosOrbIcon />
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1 font-semibold ${hasMinFilter(currentRange, { min }) ? "text-foreground" : "text-muted-foreground"}`}
+                  className={`inline-flex items-center gap-1 font-semibold ${hasMin ? "text-foreground" : "text-muted-foreground"}`}
                 >
                   <span className="leading-none font-normal">
-                    {hasMinFilter(currentRange, { min })
-                      ? currentRange.min
-                      : "No limit"}
+                    {hasMin ? currentRange.min : "No limit"}
                   </span>
-                  {hasMinFilter(currentRange, { min }) && <ChaosOrbIcon />}
+                  {hasMin && <ChaosOrbIcon />}
                 </span>
               </div>
             </div>
@@ -278,34 +272,23 @@ export function PriceFilter<TData extends Item>({
                   min={currentRange.min}
                   max={max}
                   step={10}
-                  value={[
-                    hasMaxFilter(currentRange, { max })
-                      ? (currentRange.max as number)
-                      : max,
-                  ]}
+                  value={[hasMax ? (currentRange.max as number) : max]}
                   onValueChange={handleUpperBoundChange}
                   disabled={false}
-                  className={cn(
-                    "w-full py-1",
-                    !hasMaxFilter(currentRange, { max }) && "opacity-60",
-                  )}
+                  className={cn("w-full py-1", !hasMax && "opacity-60")}
                   aria-label="Upper bound price filter"
                 />
               </div>
               <div className="text-muted-foreground flex justify-between text-xs">
                 <span
                   className={`inline-flex items-center gap-1 font-semibold ${
-                    hasMaxFilter(currentRange, { max })
-                      ? "text-foreground"
-                      : "text-muted-foreground"
+                    hasMax ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
                   <span className="leading-none font-normal">
-                    {hasMaxFilter(currentRange, { max })
-                      ? currentRange.max
-                      : "No limit"}
+                    {hasMax ? currentRange.max : "No limit"}
                   </span>
-                  {hasMaxFilter(currentRange, { max }) && <ChaosOrbIcon />}
+                  {hasMax && <ChaosOrbIcon />}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <span className="leading-none">{max}</span>
