@@ -73,7 +73,7 @@ export function DataTablePagination<TData>({
     >
       {/* Left caption: start–end of total */}
       <div
-        className="text-muted-foreground min-w-24 text-sm"
+        className="text-muted-foreground min-w-24 text-sm tabular-nums"
         aria-live="polite"
         data-testid="pagination-summary"
       >
@@ -92,7 +92,7 @@ export function DataTablePagination<TData>({
 
         {/* Page x of y */}
         <div
-          className="flex w-[100px] items-center justify-center text-sm font-semibold"
+          className="flex w-[100px] items-center justify-center text-sm font-semibold tabular-nums"
           data-testid="page-indicator"
         >
           Page {pageIndex + 1} of {table.getPageCount()}
