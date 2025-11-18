@@ -285,7 +285,8 @@ export const createColumns = (
         if (!filterValue) return true;
 
         const value = row.getValue(columnId) as number;
-        const minCheck = value >= filterValue.min;
+        const minCheck =
+          filterValue.min === undefined || value >= filterValue.min;
         const maxCheck =
           filterValue.max === undefined || value <= filterValue.max;
 

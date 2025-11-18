@@ -6,9 +6,10 @@ import {
   createLowerBoundSliderValue,
 } from "./price-transforms";
 
+// undefined means filter is disabled
 export type PriceFilterValue = {
-  min: number;
-  max?: number; // Optional for single bound filtering; "no upper bound" is represented as undefined
+  min?: number;
+  max?: number;
 };
 
 /**
@@ -55,13 +56,16 @@ export const createNormalizedFilterValue = (
   range: PriceFilterValue,
   defaults: { min: number; max: number },
 ): PriceFilterValue | undefined => {
-  const min = range.min ?? defaults.min;
+  const rawMin = range.min;
   const rawMax = range.max;
+
+  const min =
+    rawMin === undefined || rawMin === defaults.min ? undefined : rawMin;
 
   const max =
     rawMax === undefined || rawMax === defaults.max ? undefined : rawMax;
 
-  if (min === defaults.min && max === undefined) {
+  if (min === undefined && max === undefined) {
     return undefined;
   }
 
@@ -91,7 +95,7 @@ export const getCurrentRange = <TData extends Item>(
     };
   }
 
-  const min = filterValue.min ?? defaults.min;
+  const min = filterValue.min;
 
   // IMPORTANT:
   // - If max is undefined => no active upper bound; expose defaults.max so UI can position the slider thumb at the end.
@@ -161,11 +165,12 @@ const getEffectiveMaxForLowerBound = <TData extends Item>(
  */
 export const getLowerBoundSliderValue = <TData extends Item>(
   column: Column<TData, unknown> | undefined,
-  linearValue: number,
+  linearValue: number | undefined,
   defaults: { min: number; max: number },
 ): number => {
+  const value = linearValue ?? defaults.min;
   const effectiveMax = getEffectiveMaxForLowerBound(column, defaults);
-  return createLowerBoundSliderValue(linearValue, defaults.min, effectiveMax);
+  return createLowerBoundSliderValue(value, defaults.min, effectiveMax);
 };
 
 /**

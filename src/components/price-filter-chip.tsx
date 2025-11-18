@@ -15,6 +15,9 @@ export function PriceFilterChip({ value, onClear }: PriceFilterChipProps) {
   }
 
   const formatPriceRange = () => {
+    if (value.min === undefined) {
+      return `≤ ${value.max}`;
+    }
     if (value.max === undefined) {
       return `≥ ${value.min}`;
     }

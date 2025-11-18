@@ -140,10 +140,11 @@ export function PriceFilter<TData extends Item>({
       }
 
       e.preventDefault();
-      const newPrice = currentRange.min + delta;
+      const effectiveMin = currentRange.min ?? defaults.min;
+      const newPrice = effectiveMin + delta;
       updateLowerBoundPrice(newPrice);
     },
-    [currentRange.min, updateLowerBoundPrice],
+    [currentRange.min, defaults.min, updateLowerBoundPrice],
   );
 
   return (
@@ -276,19 +277,30 @@ export function PriceFilter<TData extends Item>({
             <div className="text-muted-foreground text-xs leading-[18px]">
               {isFilterActive ? (
                 hasMaxFilter(currentRange, { max }) ? (
-                  <>
-                    Showing items between{" "}
-                    <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.min}</span>
-                      <ChaosOrbIcon />
-                    </span>{" "}
-                    and{" "}
-                    <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.max}</span>
-                      <ChaosOrbIcon />
-                    </span>
-                    .
-                  </>
+                  hasMinFilter(currentRange, { min }) ? (
+                    <>
+                      Showing items between{" "}
+                      <span className="inline-flex items-center gap-1">
+                        <span className="leading-none">{currentRange.min}</span>
+                        <ChaosOrbIcon />
+                      </span>{" "}
+                      and{" "}
+                      <span className="inline-flex items-center gap-1">
+                        <span className="leading-none">{currentRange.max}</span>
+                        <ChaosOrbIcon />
+                      </span>
+                      .
+                    </>
+                  ) : (
+                    <>
+                      Showing items{" "}
+                      <span className="inline-flex items-center gap-1">
+                        <span className="leading-none">{currentRange.max}</span>
+                        <ChaosOrbIcon />
+                      </span>{" "}
+                      and below.
+                    </>
+                  )
                 ) : (
                   <>
                     Showing items{" "}
