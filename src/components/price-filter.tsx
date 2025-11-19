@@ -110,8 +110,8 @@ export function PriceFilter<TData extends Item>({
 
   const currentRange = getCurrentFilterValue(column);
 
-  const hasMin = hasMinFilter(currentRange, defaults);
-  const hasMax = hasMaxFilter(currentRange, defaults);
+  const hasMin = hasMinFilter(currentRange);
+  const hasMax = hasMaxFilter(currentRange);
 
   const isFilterActive = hasMin || hasMax;
 

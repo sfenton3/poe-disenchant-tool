@@ -28,26 +28,14 @@ export const getCurrentFilterValue = <TData extends Item>(
 };
 
 /**
- * Sets the filter value on the table column
- *
- * NOTE: We always pass a fresh object when setting the filter, to avoid any
- * stale/mutated reference issues from downstream code or table internals.
+ * Sets the filter value on the table column.
  */
 export const setFilterValue = <TData extends Item>(
   column: Column<TData, unknown> | undefined,
   value: PriceFilterValue | undefined,
 ): void => {
   if (!column) return;
-
-  if (value === undefined) {
-    column.setFilterValue(undefined);
-  } else {
-    const next: PriceFilterValue = {
-      min: value.min,
-      max: value.max,
-    };
-    column.setFilterValue(next);
-  }
+  column.setFilterValue(value);
 };
 
 /**
@@ -153,27 +141,14 @@ export const resetFilter = <TData extends Item>(
 
 /**
  * Checks if the lower bound filter is active.
- *
- * Interprets min strictly vs defaults.min.
  */
-export const hasMinFilter = (
-  range: PriceFilterValue,
-  defaults: { min: number },
-): boolean => {
-  return range.min !== undefined && range.min !== defaults.min;
+export const hasMinFilter = (range: PriceFilterValue): boolean => {
+  return range.min !== undefined;
 };
 
 /**
  * Checks if the upper bound filter is active.
- *
- * IMPORTANT:
- * - max: undefined => no upper bound.
- * - max equal to defaults.max => treated as "no upper bound".
  */
-export const hasMaxFilter = (
-  range: PriceFilterValue,
-  defaults: { max: number },
-): boolean => {
-  if (range.max === undefined) return false;
-  return range.max !== defaults.max;
+export const hasMaxFilter = (range: PriceFilterValue): boolean => {
+  return range.max !== undefined;
 };

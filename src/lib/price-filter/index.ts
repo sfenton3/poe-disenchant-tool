@@ -10,7 +10,6 @@ export {
   updateUpperBound,
   getLowerBoundSliderValue,
   getLowerBoundLinearValue,
-  hasActiveFilter,
   resetFilter,
   hasMinFilter,
   hasMaxFilter,
