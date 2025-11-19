@@ -6,7 +6,6 @@ export {
   getCurrentFilterValue,
   setFilterValue,
   createNormalizedFilterValue,
-  getCurrentRange,
   updateLowerBound,
   updateUpperBound,
   getLowerBoundSliderValue,

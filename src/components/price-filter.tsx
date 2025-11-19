@@ -15,7 +15,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import {
   createNormalizedFilterValue,
-  getCurrentRange,
+  getCurrentFilterValue,
   getLowerBoundLinearValue,
   getLowerBoundSliderValue,
   hasMaxFilter,
@@ -108,7 +108,7 @@ export function PriceFilter<TData extends Item>({
   // Defaults object to pass into logic helpers
   const defaults = useMemo(() => ({ min, max }), [min, max]);
 
-  const currentRange = getCurrentRange(column, defaults);
+  const currentRange = getCurrentFilterValue(column);
 
   const hasMin = hasMinFilter(currentRange, defaults);
   const hasMax = hasMaxFilter(currentRange, defaults);

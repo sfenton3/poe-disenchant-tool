@@ -17,8 +17,14 @@ export type PriceFilterValue = {
  */
 export const getCurrentFilterValue = <TData extends Item>(
   column: Column<TData, unknown> | undefined,
-): PriceFilterValue | undefined => {
-  return column?.getFilterValue() as PriceFilterValue | undefined;
+): PriceFilterValue => {
+  const value = column?.getFilterValue() as PriceFilterValue | undefined;
+  if (value === undefined)
+    return {
+      min: undefined,
+      max: undefined,
+    };
+  else return value;
 };
 
 /**
@@ -46,11 +52,6 @@ export const setFilterValue = <TData extends Item>(
 
 /**
  * Creates a normalized filter value against defaults.
- *
- * Rules:
- * - "No upper bound" is stored as max: undefined.
- * - If the normalized state is effectively default (min at defaults.min and no upper bound),
- *   the filter is cleared (returns undefined).
  */
 export const createNormalizedFilterValue = (
   range: PriceFilterValue,
@@ -70,50 +71,6 @@ export const createNormalizedFilterValue = (
   }
 
   return { min, max };
-};
-
-/**
- * Gets the current price range with proper defaults
- *
- * Important behavior:
- * - If there is no filter, returns the default [min, max].
- * - If only min is set, returns [min, defaults.max] BUT this does NOT mean
- *   the upper bound filter is active. That distinction is handled by hasMaxFilter().
- * - If max is set to a custom value (not equal to defaults.max), it is treated
- *   as an active upper bound filter.
- */
-export const getCurrentRange = <TData extends Item>(
-  column: Column<TData, unknown> | undefined,
-  defaults: { min: number; max: number },
-): PriceFilterValue => {
-  const filterValue = getCurrentFilterValue(column);
-
-  if (!filterValue) {
-    return {
-      min: defaults.min,
-      max: defaults.max,
-    };
-  }
-
-  const min = filterValue.min;
-
-  // IMPORTANT:
-  // - If max is undefined => no active upper bound; expose defaults.max so UI can position the slider thumb at the end.
-  // - If max equals defaults.max => we normalize it to "no upper bound" as well (for legacy values),
-  //   again exposing defaults.max for UI.
-  // - Otherwise use the concrete max.
-  let effectiveMax: number;
-
-  if (filterValue.max === undefined || filterValue.max === defaults.max) {
-    effectiveMax = defaults.max;
-  } else {
-    effectiveMax = filterValue.max;
-  }
-
-  return {
-    min,
-    max: effectiveMax,
-  };
 };
 
 /**
@@ -156,7 +113,7 @@ const getEffectiveMaxForLowerBound = <TData extends Item>(
   column: Column<TData, unknown> | undefined,
   defaults: { min: number; max: number },
 ): number => {
-  const currentRange = getCurrentRange(column, defaults);
+  const currentRange = getCurrentFilterValue(column);
   return currentRange.max ?? defaults.max;
 };
 
@@ -195,7 +152,6 @@ export const hasActiveFilter = <TData extends Item>(
   defaults: { min: number; max: number },
 ): boolean => {
   const filterValue = getCurrentFilterValue(column);
-  if (!filterValue) return false;
 
   const hasMin =
     filterValue.min !== undefined && filterValue.min !== defaults.min;
