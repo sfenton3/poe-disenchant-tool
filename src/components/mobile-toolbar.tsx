@@ -1,6 +1,6 @@
 import type { AdvancedSettings } from "@/components/advanced-settings-panel";
-import type { PriceFilterValue } from "@/components/price-filter";
 import type { Item } from "@/lib/itemData";
+import type { PriceFilterValue } from "@/lib/price-filter";
 import { Table } from "@tanstack/react-table";
 
 import { AdvancedSettingsPanel } from "@/components/advanced-settings-panel";

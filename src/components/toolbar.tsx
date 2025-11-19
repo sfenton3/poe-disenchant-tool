@@ -5,6 +5,7 @@ import { Table } from "@tanstack/react-table";
 import { AdvancedSettingsPanel } from "@/components/advanced-settings-panel";
 import { NameFilter } from "@/components/name-filter";
 import { PriceFilter } from "@/components/price-filter";
+import { PriceFilterValue } from "@/lib/price-filter";
 import { ClearMarksButton } from "./clear-marks-button";
 import { COLUMN_IDS } from "./columns";
 import { MobileSortingControls } from "./mobile-sorting-controls";
@@ -48,7 +49,7 @@ export function DataTableToolbar<TData extends Item>({
               "";
             const chaosRange = table
               .getColumn(COLUMN_IDS.CHAOS)
-              ?.getFilterValue() as { min: number; max: number } | undefined;
+              ?.getFilterValue() as PriceFilterValue | undefined;
 
             return (
               <>
@@ -63,18 +64,16 @@ export function DataTableToolbar<TData extends Item>({
                   </div>
                 )}
 
-                {chaosRange && (
-                  <div className="w-auto min-w-0 xl:shrink-0">
-                    <PriceFilterChip
-                      value={chaosRange}
-                      onClear={() =>
-                        table
-                          .getColumn(COLUMN_IDS.CHAOS)
-                          ?.setFilterValue(undefined)
-                      }
-                    />
-                  </div>
-                )}
+                <div className="w-auto min-w-0 xl:shrink-0">
+                  <PriceFilterChip
+                    value={chaosRange}
+                    onClear={() =>
+                      table
+                        .getColumn(COLUMN_IDS.CHAOS)
+                        ?.setFilterValue(undefined)
+                    }
+                  />
+                </div>
               </>
             );
           })()}

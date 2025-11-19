@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { League } from "@/lib/leagues";
+import { PriceFilterValue } from "@/lib/price-filter";
 import { createTradeLink } from "@/lib/tradeLink";
 import { CatalystIcon } from "./catalyst-icon";
 import { CatalystInfo } from "./catalyst-info";
@@ -281,11 +282,12 @@ export const createColumns = (
       header: () => <span>Price</span>,
       size: 100,
       meta: { className: "text-right tabular-nums" },
-      filterFn: (row, columnId, filterValue) => {
+      filterFn: (row, columnId, filterValue: PriceFilterValue) => {
         if (!filterValue) return true;
 
         const value = row.getValue(columnId) as number;
-        const minCheck = value >= filterValue.min;
+        const minCheck =
+          filterValue.min === undefined || value >= filterValue.min;
         const maxCheck =
           filterValue.max === undefined || value <= filterValue.max;
 

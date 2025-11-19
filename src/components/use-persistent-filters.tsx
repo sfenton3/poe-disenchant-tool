@@ -9,7 +9,7 @@ import { COLUMN_IDS } from "./columns";
 const PersistedFiltersSchema = z.object({
   price: z
     .object({
-      min: z.number(),
+      min: z.number().optional(),
       max: z.number().optional(),
     })
     .optional(),

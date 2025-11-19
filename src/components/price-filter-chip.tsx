@@ -1,8 +1,9 @@
-import type { PriceFilterValue } from "@/components/price-filter";
+import type { PriceFilterValue } from "@/lib/price-filter";
 
 import { ChaosOrbIcon } from "@/components/chaos-orb-icon";
 import { Badge } from "@/components/ui/badge";
 import { XButton } from "@/components/ui/x-button";
+import { hasMaxFilter, hasMinFilter } from "@/lib/price-filter";
 
 interface PriceFilterChipProps {
   value?: PriceFilterValue;
@@ -10,14 +11,15 @@ interface PriceFilterChipProps {
 }
 
 export function PriceFilterChip({ value, onClear }: PriceFilterChipProps) {
-  if (!value) {
-    return null;
-  }
+  if (!value) return null;
+
+  const hasMin = hasMinFilter(value);
+  const hasMax = hasMaxFilter(value);
+  if (!hasMin && !hasMax) return null;
 
   const formatPriceRange = () => {
-    if (value.max === undefined) {
-      return `≥ ${value.min}`;
-    }
+    if (!hasMin) return `≤ ${value.max}`;
+    if (!hasMax) return `≥ ${value.min}`;
     return `${value.min}–${value.max}`;
   };
 

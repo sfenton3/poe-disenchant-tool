@@ -1,4 +1,5 @@
 import type { Item } from "@/lib/itemData";
+import type { PriceFilterValue } from "@/lib/price-filter";
 import type { Column } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import { ChevronDown, Filter } from "lucide-react";
@@ -14,10 +15,9 @@ import {
 import { Slider } from "@/components/ui/slider";
 import {
   createNormalizedFilterValue,
-  getCurrentRange,
+  getCurrentFilterValue,
   getLowerBoundLinearValue,
   getLowerBoundSliderValue,
-  hasActiveFilter,
   hasMaxFilter,
   hasMinFilter,
   resetFilter,
@@ -28,14 +28,74 @@ import {
 import { cn } from "@/lib/utils";
 import { ChaosOrbIcon } from "./chaos-orb-icon";
 
-export type { PriceFilterValue } from "@/lib/price-filter";
-
 interface PriceFilterProps<TData> {
   column: Column<TData, unknown> | undefined;
   min: number;
   max: number;
   className?: string;
 }
+
+// Helper functions for rendering price filter descriptions
+const renderPriceRangeDescription = (
+  min: number | undefined,
+  max: number | undefined,
+) => (
+  <>
+    Showing items between{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{min}</span>
+      <ChaosOrbIcon />
+    </span>{" "}
+    and{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{max}</span>
+      <ChaosOrbIcon />
+    </span>
+    .
+  </>
+);
+
+const renderMaxPriceDescription = (max: number | undefined) => (
+  <>
+    Showing items{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{max}</span>
+      <ChaosOrbIcon />
+    </span>{" "}
+    and below.
+  </>
+);
+
+const renderMinPriceDescription = (min: number | undefined) => (
+  <>
+    Showing items{" "}
+    <span className="inline-flex items-center gap-1">
+      <span className="leading-none">{min}</span>
+      <ChaosOrbIcon />
+    </span>{" "}
+    and above.
+  </>
+);
+
+const renderFilterStatusDescription = (
+  currentRange: PriceFilterValue,
+  hasMin: boolean,
+  hasMax: boolean,
+) => {
+  if (hasMin && hasMax) {
+    return renderPriceRangeDescription(currentRange.min, currentRange.max);
+  }
+  if (hasMin) {
+    return renderMinPriceDescription(currentRange.min);
+  }
+  if (hasMax) {
+    return renderMaxPriceDescription(currentRange.max);
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1">Showing all items.</span>
+  );
+};
 
 export function PriceFilter<TData extends Item>({
   column,
@@ -48,59 +108,49 @@ export function PriceFilter<TData extends Item>({
   // Defaults object to pass into logic helpers
   const defaults = useMemo(() => ({ min, max }), [min, max]);
 
-  const currentRange = getCurrentRange(column, defaults);
+  const currentRange = getCurrentFilterValue(column);
+
+  const hasMin = hasMinFilter(currentRange);
+  const hasMax = hasMaxFilter(currentRange);
+
+  const isFilterActive = hasMin || hasMax;
 
   // Shared helper to update lower bound using a linear price value (in chaos)
-  const updateLowerBoundPrice = useCallback(
-    (newPrice: number) => {
-      const effectiveMax = currentRange.max ?? defaults.max;
-      const clamped = Math.round(
-        Math.min(Math.max(newPrice, defaults.min), effectiveMax),
-      );
+  const updateLowerBoundPrice = (newPrice: number) => {
+    const effectiveMax = currentRange.max ?? max;
+    const clamped = Math.round(Math.min(Math.max(newPrice, min), effectiveMax));
 
-      const updatedRange = updateLowerBound(clamped, currentRange, {
-        max: defaults.max,
-      });
-      const normalizedFilter = createNormalizedFilterValue(
-        updatedRange,
-        defaults,
-      );
-      setFilterValue(column, normalizedFilter);
-    },
-    [column, currentRange, defaults],
-  );
-
+    const updatedRange = updateLowerBound(clamped, currentRange, {
+      max,
+    });
+    const normalizedFilter = createNormalizedFilterValue(
+      updatedRange,
+      defaults,
+    );
+    setFilterValue(column, normalizedFilter);
+  };
   // Handles slider (mouse/touch) interaction — converts from slider value (0–100) to log scale
-  const handleLowerBoundChange = useCallback(
-    (sliderValue: number[]) => {
-      const newLinearValue = getLowerBoundLinearValue(
-        column,
-        sliderValue[0],
-        defaults,
-      );
-      updateLowerBoundPrice(newLinearValue);
-    },
-    [column, defaults, updateLowerBoundPrice],
-  );
+  const handleLowerBoundChange = (sliderValue: number[]) => {
+    const newLinearValue = getLowerBoundLinearValue(
+      column,
+      sliderValue[0],
+      defaults,
+    );
+    updateLowerBoundPrice(newLinearValue);
+  };
 
-  const handleUpperBoundChange = useCallback(
-    (sliderValue: number[]) => {
-      const updatedRange = updateUpperBound(
-        sliderValue[0], // Direct value since upper bound uses linear scaling
-        currentRange,
-        { max },
-      );
-      const normalizedFilter = createNormalizedFilterValue(
-        updatedRange,
-        defaults,
-      );
-      setFilterValue(column, normalizedFilter);
-    },
-    [column, currentRange, defaults, max],
-  );
-
-  const isFilterActive = hasActiveFilter(column, defaults);
-
+  const handleUpperBoundChange = (sliderValue: number[]) => {
+    const updatedRange = updateUpperBound(
+      sliderValue[0], // Direct value since upper bound uses linear scaling
+      currentRange,
+      { max },
+    );
+    const normalizedFilter = createNormalizedFilterValue(
+      updatedRange,
+      defaults,
+    );
+    setFilterValue(column, normalizedFilter);
+  };
   const handleReset = useCallback(() => {
     resetFilter(column);
   }, [column]);
@@ -111,40 +161,38 @@ export function PriceFilter<TData extends Item>({
   }, []);
 
   // Handles keyboard events on the slider
-  const handleLowerBoundKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      // let Home/End behave as usual
-      if (e.key === "Home" || e.key === "End") return;
+  const handleLowerBoundKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // let Home/End behave as usual
+    if (e.key === "Home" || e.key === "End") return;
 
-      const SMALL_STEP = 1;
-      const LARGE_STEP = 10;
+    const SMALL_STEP = 1;
+    const LARGE_STEP = 10;
 
-      let delta = 0;
-      switch (e.key) {
-        case "ArrowRight":
-        case "ArrowUp":
-          delta = e.shiftKey ? LARGE_STEP : SMALL_STEP;
-          break;
-        case "ArrowLeft":
-        case "ArrowDown":
-          delta = e.shiftKey ? -LARGE_STEP : -SMALL_STEP;
-          break;
-        case "PageUp":
-          delta = LARGE_STEP;
-          break;
-        case "PageDown":
-          delta = -LARGE_STEP;
-          break;
-        default:
-          return; // let all other keys pass through
-      }
+    let delta = 0;
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowUp":
+        delta = e.shiftKey ? LARGE_STEP : SMALL_STEP;
+        break;
+      case "ArrowLeft":
+      case "ArrowDown":
+        delta = e.shiftKey ? -LARGE_STEP : -SMALL_STEP;
+        break;
+      case "PageUp":
+        delta = LARGE_STEP;
+        break;
+      case "PageDown":
+        delta = -LARGE_STEP;
+        break;
+      default:
+        return; // let all other keys pass through
+    }
 
-      e.preventDefault();
-      const newPrice = currentRange.min + delta;
-      updateLowerBoundPrice(newPrice);
-    },
-    [currentRange.min, updateLowerBoundPrice],
-  );
+    e.preventDefault();
+    const effectiveMin = currentRange.min ?? min;
+    const newPrice = effectiveMin + delta;
+    updateLowerBoundPrice(newPrice);
+  };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -206,14 +254,12 @@ export function PriceFilter<TData extends Item>({
                   <ChaosOrbIcon />
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1 font-semibold ${hasMinFilter(currentRange, { min }) ? "text-foreground" : "text-muted-foreground"}`}
+                  className={`inline-flex items-center gap-1 font-semibold ${hasMin ? "text-foreground" : "text-muted-foreground"}`}
                 >
                   <span className="leading-none font-normal">
-                    {hasMinFilter(currentRange, { min })
-                      ? currentRange.min
-                      : "No limit"}
+                    {hasMin ? currentRange.min : "No limit"}
                   </span>
-                  {hasMinFilter(currentRange, { min }) && <ChaosOrbIcon />}
+                  {hasMin && <ChaosOrbIcon />}
                 </span>
               </div>
             </div>
@@ -223,37 +269,26 @@ export function PriceFilter<TData extends Item>({
               <div className="px-2">
                 <Slider
                   id="upper-bound"
-                  min={currentRange.min}
+                  min={currentRange.min ?? min}
                   max={max}
                   step={10}
-                  value={[
-                    hasMaxFilter(currentRange, { max })
-                      ? (currentRange.max as number)
-                      : max,
-                  ]}
+                  value={[hasMax ? (currentRange.max as number) : max]}
                   onValueChange={handleUpperBoundChange}
                   disabled={false}
-                  className={cn(
-                    "w-full py-1",
-                    !hasMaxFilter(currentRange, { max }) && "opacity-60",
-                  )}
+                  className={cn("w-full py-1", !hasMax && "opacity-60")}
                   aria-label="Upper bound price filter"
                 />
               </div>
               <div className="text-muted-foreground flex justify-between text-xs">
                 <span
                   className={`inline-flex items-center gap-1 font-semibold ${
-                    hasMaxFilter(currentRange, { max })
-                      ? "text-foreground"
-                      : "text-muted-foreground"
+                    hasMax ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
                   <span className="leading-none font-normal">
-                    {hasMaxFilter(currentRange, { max })
-                      ? currentRange.max
-                      : "No limit"}
+                    {hasMax ? currentRange.max : "No limit"}
                   </span>
-                  {hasMaxFilter(currentRange, { max }) && <ChaosOrbIcon />}
+                  {hasMax && <ChaosOrbIcon />}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <span className="leading-none">{max}</span>
@@ -274,36 +309,7 @@ export function PriceFilter<TData extends Item>({
               </Badge>
             </div>
             <div className="text-muted-foreground text-xs leading-[18px]">
-              {isFilterActive ? (
-                hasMaxFilter(currentRange, { max }) ? (
-                  <>
-                    Showing items between{" "}
-                    <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.min}</span>
-                      <ChaosOrbIcon />
-                    </span>{" "}
-                    and{" "}
-                    <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.max}</span>
-                      <ChaosOrbIcon />
-                    </span>
-                    .
-                  </>
-                ) : (
-                  <>
-                    Showing items{" "}
-                    <span className="inline-flex items-center gap-1">
-                      <span className="leading-none">{currentRange.min}</span>
-                      <ChaosOrbIcon />
-                    </span>{" "}
-                    and above.
-                  </>
-                )
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  Showing all items.
-                </span>
-              )}
+              {renderFilterStatusDescription(currentRange, hasMin, hasMax)}
             </div>
           </div>
 
