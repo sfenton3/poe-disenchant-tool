@@ -143,25 +143,6 @@ export const getLowerBoundLinearValue = <TData extends Item>(
 };
 
 /**
- * Checks if there's an active filter applied.
- *
- * Uses the raw filter value, not the UI-effective range.
- */
-export const hasActiveFilter = <TData extends Item>(
-  column: Column<TData, unknown> | undefined,
-  defaults: { min: number; max: number },
-): boolean => {
-  const filterValue = getCurrentFilterValue(column);
-
-  const hasMin =
-    filterValue.min !== undefined && filterValue.min !== defaults.min;
-  const hasMax =
-    filterValue.max !== undefined && filterValue.max !== defaults.max;
-
-  return hasMin || hasMax;
-};
-
-/**
  * Resets the filter to default state
  */
 export const resetFilter = <TData extends Item>(
