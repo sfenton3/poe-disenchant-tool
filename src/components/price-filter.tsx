@@ -269,7 +269,7 @@ export function PriceFilter<TData extends Item>({
               <div className="px-2">
                 <Slider
                   id="upper-bound"
-                  min={currentRange.min}
+                  min={currentRange.min ?? min}
                   max={max}
                   step={10}
                   value={[hasMax ? (currentRange.max as number) : max]}
