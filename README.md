@@ -28,8 +28,8 @@ Path of Exile tool for calculating unique item disenchanting efficiency across m
   - Dust value
   - Gold fee
 - Sorting options:
-  - Dust per chaos
-  - Dust per chaos per slot
+  - Dust per Chaos
+  - Dust per Chaos per slot
   - Price
   - Dust value
   - Gold fee
