@@ -8,8 +8,8 @@ import type {
 } from "@tanstack/react-table";
 import React, { createContext, useCallback, useContext, useState } from "react";
 
+import { usePersistentFilters } from "@/components/filters";
 import { COLUMN_IDS } from "./columns";
-import { usePersistentFilters } from "./use-persistent-filters";
 
 interface DataTableState {
   sorting: SortingState;
@@ -58,16 +58,30 @@ export function DataTableStateProvider({
     // which triggers hydration warnings.
     const timeout = window.setTimeout(() => {
       setColumnFilters((prev) => {
-        const persistedPrice = persistedFilters?.price;
+        const filtersToRestore = prev.filter(
+          (f) =>
+            f.id !== chaosColumnId && f.id !== COLUMN_IDS.CALCULATED_DUST_VALUE,
+        );
 
         // If chaos filter needs to be applied
-        if (persistedPrice != null) {
-          const chaosFilter = { id: chaosColumnId, value: persistedPrice };
-          return [...prev.filter((f) => f.id !== chaosColumnId), chaosFilter];
+        if (persistedFilters?.price != null) {
+          const chaosFilter = {
+            id: chaosColumnId,
+            value: persistedFilters.price,
+          };
+          filtersToRestore.push(chaosFilter);
         }
 
-        // Otherwise, strip chaos filter if present
-        return prev.filter((f) => f.id !== chaosColumnId);
+        // If dust filter needs to be applied
+        if (persistedFilters?.dust != null) {
+          const dustFilter = {
+            id: COLUMN_IDS.CALCULATED_DUST_VALUE,
+            value: persistedFilters.dust,
+          };
+          filtersToRestore.push(dustFilter);
+        }
+
+        return filtersToRestore;
       });
     }, 0);
     return () => window.clearTimeout(timeout);

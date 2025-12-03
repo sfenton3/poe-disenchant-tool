@@ -263,51 +263,128 @@ test.describe("Name Filter Functionality", () => {
   });
 });
 
-test.describe("Price Filter Functionality", () => {
-  test("should open and close price filter popover", async ({ poePage }) => {
-    await poePage.openPriceFilter();
-    await expect(poePage.priceFilterPopover).toBeVisible();
+test.describe("Tabbed Filter Functionality", () => {
+  test("should open and close tabbed filter popover", async ({ poePage }) => {
+    await poePage.openTabbedFilter();
+    await expect(poePage.tabbedFilterPopover).toBeVisible();
 
-    await poePage.closePriceFilter();
-    await expect(poePage.priceFilterPopover).not.toBeVisible();
+    await poePage.closeTabbedFilter();
+    await expect(poePage.tabbedFilterPopover).not.toBeVisible();
   });
 
-  test("should close price filter popover with escape key", async ({
+  test("should close tabbed filter popover with escape key", async ({
     poePage,
   }) => {
-    await poePage.openPriceFilter();
-    await expect(poePage.priceFilterPopover).toBeVisible();
+    await poePage.openTabbedFilter();
+    await expect(poePage.tabbedFilterPopover).toBeVisible();
 
     await poePage.page.keyboard.press("Escape");
-    await expect(poePage.priceFilterPopover).not.toBeVisible();
+    await expect(poePage.tabbedFilterPopover).not.toBeVisible();
   });
 
-  test("should close price filter popover with outside click", async ({
+  test("should close tabbed filter popover with outside click", async ({
     poePage,
   }) => {
-    await poePage.openPriceFilter();
-    await expect(poePage.priceFilterPopover).toBeVisible();
+    await poePage.openTabbedFilter();
+    await expect(poePage.tabbedFilterPopover).toBeVisible();
 
     await poePage.page.locator("body").click();
-    await poePage.page.waitForTimeout(200);
-
-    await expect(poePage.priceFilterPopover).not.toBeVisible();
+    await expect(poePage.tabbedFilterPopover).not.toBeVisible();
   });
 
+  test("should switch between price and dust value tabs", async ({
+    poePage,
+  }) => {
+    await poePage.openTabbedFilter();
+
+    // Verify price tab is active by default
+    await poePage.verifyTabActive("price");
+    await expect(poePage.priceTabTrigger).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(poePage.dustValueTabTrigger).toHaveAttribute(
+      "data-state",
+      "inactive",
+    );
+
+    // Switch to dust value tab
+    await poePage.dustValueTabTrigger.click();
+    await expect(poePage.dustValueTabTrigger).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(poePage.priceTabTrigger).toHaveAttribute(
+      "data-state",
+      "inactive",
+    );
+
+    // Switch back to price tab
+    await poePage.priceTabTrigger.click();
+    await expect(poePage.priceTabTrigger).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(poePage.dustValueTabTrigger).toHaveAttribute(
+      "data-state",
+      "inactive",
+    );
+
+    await poePage.closeTabbedFilter();
+  });
+
+  test("should maintain tab state when reopening popover", async ({
+    poePage,
+  }) => {
+    await poePage.openTabbedFilter();
+    await poePage.switchToTab("dustValue");
+    await poePage.closeTabbedFilter();
+
+    // Reopen and verify dust value tab is still active
+    await poePage.openTabbedFilter();
+    await poePage.verifyTabActive("dustValue");
+    await poePage.closeTabbedFilter();
+  });
+
+  test("should reset all filters with reset all button", async ({
+    poePage,
+  }) => {
+    await poePage.openTabbedFilter();
+    // Set price filter
+    await poePage.setPriceFilterValuePercent("lower", 50);
+    await poePage.verifyFilterChipVisible("price", true);
+
+    // Set dust filter
+    await poePage.setDustFilterValuePercent("lower", 30);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    // Reset all
+    await poePage.tabbedFilterResetAllButton.click();
+    await poePage.verifyFilterChipVisible("price", false);
+    await poePage.verifyFilterChipVisible("dust", false);
+  });
+});
+
+test.describe("Price Filter Functionality", () => {
   test("should set lower bound price filter value", async ({ poePage }) => {
     await poePage.verifyFilterChipVisible("price", false);
+
+    await poePage.openTabbedFilter();
     await poePage.setPriceFilterValuePercent("lower", 50);
     await poePage.verifyFilterChipVisible("price", true);
   });
 
   test("should set upper bound price filter value", async ({ poePage }) => {
     await poePage.verifyFilterChipVisible("price", false);
+
+    await poePage.openTabbedFilter();
     await poePage.setPriceFilterValuePercent("upper", 50);
     await poePage.verifyFilterChipVisible("price", true);
   });
 
   test("should set both bounds price filter value", async ({ poePage }) => {
     await poePage.verifyFilterChipVisible("price", false);
+    await poePage.openTabbedFilter();
 
     // 1) Set only lower bound (upper bound should be disabled / no max)
     await poePage.setPriceFilterValuePercent("lower", 50);
@@ -327,19 +404,11 @@ test.describe("Price Filter Functionality", () => {
     expect(rangeBoth.max).toBeLessThan(500);
   });
 
-  test("should reset price filter to default with reset button", async ({
-    poePage,
-  }) => {
-    await poePage.setPriceFilterValuePercent("lower", 50);
-    await poePage.verifyFilterChipVisible("price", true);
-
-    await poePage.resetPriceFilter();
-    await poePage.verifyFilterChipVisible("price", false);
-  });
-
   test("should maintain price filter during name filter changes", async ({
     poePage,
   }) => {
+    await poePage.openTabbedFilter();
+
     // Set price filter first
     await poePage.setPriceFilterValuePercent("lower", 50);
     await poePage.verifyFilterChipVisible("price", true);
@@ -347,10 +416,170 @@ test.describe("Price Filter Functionality", () => {
     // Apply name filter
     const targetItem = initialItems[0];
     await poePage.setNameFilter(targetItem.name);
-    await poePage.page.waitForTimeout(500);
+    await poePage.waitForFilterDebounce();
 
     // Verify price filter is still active
     await poePage.verifyFilterChipVisible("price", true);
+  });
+
+  test("should maintain price filter during dust value filter changes", async ({
+    poePage,
+  }) => {
+    await poePage.openTabbedFilter();
+
+    // Set price filter first
+    await poePage.setPriceFilterValuePercent("lower", 50);
+    await poePage.verifyFilterChipVisible("price", true);
+
+    // Apply dust value filter
+    await poePage.setDustFilterValuePercent("lower", 30);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    // Verify price filter is still active
+    await poePage.verifyFilterChipVisible("price", true);
+  });
+
+  test("should persist price filter state after page refresh", async ({
+    poePage,
+  }) => {
+    // Set a price filter
+    await poePage.openTabbedFilter();
+    await poePage.setPriceFilterValuePercent("lower", 50);
+    await poePage.verifyFilterChipVisible("price", true);
+
+    // Get the filter range before refresh
+    const filterRangeBefore = await poePage.getPriceFilterRange();
+    expect(filterRangeBefore.min).toBeDefined();
+    expect(filterRangeBefore.min).toBeGreaterThan(0);
+
+    // Refresh the page
+    await poePage.refreshPage();
+
+    // Verify the price filter is still active after refresh
+    await poePage.verifyFilterChipVisible("price", true);
+
+    // Verify the filter range is the same as before refresh
+    const filterRangeAfter = await poePage.getPriceFilterRange();
+    expect(filterRangeAfter.min).toBe(filterRangeBefore.min);
+    expect(filterRangeAfter.max).toBe(filterRangeBefore.max);
+  });
+});
+
+test.describe("Dust Value Filter Functionality", () => {
+  test("should set lower bound dust value filter value", async ({
+    poePage,
+  }) => {
+    await poePage.verifyFilterChipVisible("dust", false);
+    await poePage.openTabbedFilter();
+
+    await poePage.setDustFilterValuePercent("lower", 25);
+    await poePage.verifyFilterChipVisible("dust", true);
+  });
+
+  test("should set upper bound dust value filter value", async ({
+    poePage,
+  }) => {
+    await poePage.verifyFilterChipVisible("dust", false);
+    await poePage.openTabbedFilter();
+
+    await poePage.setDustFilterValuePercent("upper", 75);
+    await poePage.verifyFilterChipVisible("dust", true);
+  });
+
+  test("should set both bounds dust value filter value", async ({
+    poePage,
+  }) => {
+    await poePage.verifyFilterChipVisible("dust", false);
+    await poePage.openTabbedFilter();
+
+    // 1) Set only lower bound
+    await poePage.setDustFilterValuePercent("lower", 25);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    const lowerOnly = await poePage.getDustFilterRange();
+    expect(lowerOnly.min).toBeGreaterThan(2000); // Min dust value
+    expect(lowerOnly.max).toBeUndefined();
+
+    // 2) Now set upper bound as well, creating a bounded range
+    await poePage.setDustFilterValuePercent("upper", 75);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    const rangeBoth = await poePage.getDustFilterRange();
+    expect(rangeBoth.min).toBe(lowerOnly.min);
+    expect(rangeBoth.max).toBeDefined();
+    expect(rangeBoth.max).toBeLessThan(5000000); // Max dust value
+  });
+
+  test("should reset dust value filter to default with reset button", async ({
+    poePage,
+  }) => {
+    await poePage.openTabbedFilter();
+
+    await poePage.setDustFilterValuePercent("lower", 25);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    await poePage.resetDustFilter();
+    await poePage.verifyFilterChipVisible("dust", false);
+  });
+
+  test("should maintain dust value filter during name filter changes", async ({
+    poePage,
+  }) => {
+    await poePage.openTabbedFilter();
+
+    // Set dust value filter first
+    await poePage.setDustFilterValuePercent("lower", 25);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    // Apply name filter
+    const targetItem = initialItems[0];
+    await poePage.setNameFilter(targetItem.name);
+    await poePage.waitForFilterDebounce();
+
+    // Verify dust value filter is still active
+    await poePage.verifyFilterChipVisible("dust", true);
+  });
+
+  test("should maintain dust value filter during price filter changes", async ({
+    poePage,
+  }) => {
+    await poePage.openTabbedFilter();
+
+    // Set dust value filter first
+    await poePage.setDustFilterValuePercent("lower", 25);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    // Apply price filter
+    await poePage.setPriceFilterValuePercent("lower", 50);
+    await poePage.verifyFilterChipVisible("price", true);
+
+    // Verify dust value filter is still active
+    await poePage.verifyFilterChipVisible("dust", true);
+  });
+
+  test("should persist dust value filter state after page refresh", async ({
+    poePage,
+  }) => {
+    // Set a dust value filter
+    await poePage.openTabbedFilter();
+    await poePage.setDustFilterValuePercent("lower", 25);
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    // Get the filter range before refresh
+    const filterRangeBefore = await poePage.getDustFilterRange();
+    expect(filterRangeBefore.min).toBeDefined();
+    expect(filterRangeBefore.min).toBeGreaterThan(2000);
+
+    // Refresh the page
+    await poePage.refreshPage();
+
+    // Verify the dust value filter is still active after refresh
+    await poePage.verifyFilterChipVisible("dust", true);
+
+    // Verify the filter range is the same as before refresh
+    const filterRangeAfter = await poePage.getDustFilterRange();
+    expect(filterRangeAfter.min).toBe(filterRangeBefore.min);
+    expect(filterRangeAfter.max).toBe(filterRangeBefore.max);
   });
 });
 

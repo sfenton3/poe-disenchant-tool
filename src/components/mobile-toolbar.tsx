@@ -1,16 +1,19 @@
 import type { AdvancedSettings } from "@/components/advanced-settings-panel";
 import type { Item } from "@/lib/itemData";
-import type { PriceFilterValue } from "@/lib/price-filter";
 import { Table } from "@tanstack/react-table";
 
 import { AdvancedSettingsPanel } from "@/components/advanced-settings-panel";
-import { NameFilter } from "@/components/name-filter";
-import { PriceFilter } from "@/components/price-filter";
+import {
+  DustFilterChip,
+  NameFilter,
+  NameFilterChip,
+  PriceFilterChip,
+  TabbedFilter,
+} from "@/components/filters";
+import { RangeFilterValue } from "@/lib/range-filter";
 import { ClearMarksButton } from "./clear-marks-button";
 import { COLUMN_IDS } from "./columns";
 import { MobileSortingControls } from "./mobile-sorting-controls";
-import { NameFilterChip } from "./name-filter-chip";
-import { PriceFilterChip } from "./price-filter-chip";
 
 type MobileToolbarProps<TData extends Item> = {
   table: Table<TData>;
@@ -33,10 +36,13 @@ export function MobileToolbar<TData extends Item>({
         {/* Primary Actions Row - Most Important Features */}
 
         <div className="flex max-w-[220px] flex-1 flex-col gap-1">
-          <PriceFilter
-            column={table.getColumn(COLUMN_IDS.CHAOS)}
-            min={0}
-            max={500}
+          <TabbedFilter
+            priceColumn={table.getColumn(COLUMN_IDS.CHAOS)}
+            dustColumn={table.getColumn(COLUMN_IDS.CALCULATED_DUST_VALUE)}
+            priceMin={0}
+            priceMax={500}
+            dustMin={2000}
+            dustMax={5000000}
             className="w-full"
           />
           <MobileSortingControls table={table} className="w-full" />
@@ -66,9 +72,13 @@ export function MobileToolbar<TData extends Item>({
             "";
           const chaosRange = table
             .getColumn(COLUMN_IDS.CHAOS)
-            ?.getFilterValue() as PriceFilterValue | undefined;
+            ?.getFilterValue() as RangeFilterValue | undefined;
+          const dustRange = table
+            .getColumn(COLUMN_IDS.CALCULATED_DUST_VALUE)
+            ?.getFilterValue() as RangeFilterValue | undefined;
 
-          const hasActiveFilters = nameFilter !== "" || !!chaosRange;
+          const hasActiveFilters =
+            nameFilter !== "" || !!chaosRange || !!dustRange;
 
           return hasActiveFilters ? (
             <div className="flex flex-wrap gap-1">
@@ -78,12 +88,24 @@ export function MobileToolbar<TData extends Item>({
                   table.getColumn(COLUMN_IDS.NAME)?.setFilterValue("")
                 }
               />
-              <PriceFilterChip
-                value={chaosRange}
-                onClear={() =>
-                  table.getColumn(COLUMN_IDS.CHAOS)?.setFilterValue(undefined)
-                }
-              />
+              {chaosRange && (
+                <PriceFilterChip
+                  value={chaosRange}
+                  onClear={() =>
+                    table.getColumn(COLUMN_IDS.CHAOS)?.setFilterValue(undefined)
+                  }
+                />
+              )}
+              {dustRange && (
+                <DustFilterChip
+                  value={dustRange}
+                  onClear={() =>
+                    table
+                      .getColumn(COLUMN_IDS.CALCULATED_DUST_VALUE)
+                      ?.setFilterValue(undefined)
+                  }
+                />
+              )}
             </div>
           ) : null;
         })()}
