@@ -24,9 +24,7 @@ interface RangeFilterProps<TData> {
   column: Column<TData, unknown> | undefined;
   min: number;
   max: number;
-  step?: number;
-  smallStep?: number;
-  largeStep?: number;
+  step: number;
   icon?: React.ReactNode;
   title: string;
 }
@@ -97,9 +95,7 @@ export function RangeFilter<TData extends Item>({
   column,
   min,
   max,
-  step = 10,
-  smallStep = 1,
-  largeStep = 10,
+  step,
   icon,
   title,
 }: RangeFilterProps<TData>) {
@@ -153,24 +149,27 @@ export function RangeFilter<TData extends Item>({
     // Home and End keys handled by Radix correctly
     if (e.key === "Home" || e.key === "End") return;
 
+    const SMALL_STEP = 1;
+    const LARGE_STEP = 10;
+
     let delta = 0;
     switch (e.key) {
       case "ArrowRight":
       case "ArrowUp":
-        delta = e.shiftKey ? largeStep : smallStep;
+        delta = e.shiftKey ? LARGE_STEP : SMALL_STEP;
         break;
       case "ArrowLeft":
       case "ArrowDown":
-        delta = e.shiftKey ? -largeStep : -smallStep;
+        delta = e.shiftKey ? -LARGE_STEP : -SMALL_STEP;
         break;
       case "PageUp":
-        delta = largeStep;
+        delta = LARGE_STEP;
         break;
       case "PageDown":
-        delta = -largeStep;
+        delta = -LARGE_STEP;
         break;
       default:
-        return;
+        return; // let all other keys pass through
     }
 
     e.preventDefault();
@@ -227,6 +226,7 @@ export function RangeFilter<TData extends Item>({
               disabled={!hasMin}
               onClick={handleResetLowerBound}
               className="bg-background dark:bg-background hover:bg-accent h-6 text-xs"
+              aria-label={`Reset lower bound ${title.toLowerCase()} filter`}
             >
               Reset
             </Button>
@@ -274,6 +274,7 @@ export function RangeFilter<TData extends Item>({
               disabled={!hasMax}
               onClick={handleResetUpperBound}
               className="bg-background dark:bg-background hover:bg-accent h-6 text-xs"
+              aria-label={`Reset upper bound  ${title.toLowerCase()} filter`}
             >
               Reset
             </Button>

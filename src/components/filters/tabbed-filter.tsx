@@ -18,25 +18,32 @@ import {
 import { cn } from "@/lib/utils";
 import { ChaosOrbIcon } from "../chaos-orb-icon";
 import { DustIcon } from "../dust-icon";
+import { GoldIcon } from "../gold-icon";
 import { RangeFilter } from "./range-filter";
 
 interface TabbedFilterProps<TData> {
   priceColumn: Column<TData, unknown> | undefined;
   dustColumn: Column<TData, unknown> | undefined;
+  goldColumn: Column<TData, unknown> | undefined;
   priceMin: number;
   priceMax: number;
   dustMin: number;
   dustMax: number;
+  goldMin: number;
+  goldMax: number;
   className?: string;
 }
 
 export function TabbedFilter<TData extends Item>({
   priceColumn,
   dustColumn,
+  goldColumn,
   priceMin,
   priceMax,
   dustMin,
   dustMax,
+  goldMin,
+  goldMax,
   className,
 }: TabbedFilterProps<TData>) {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,17 +51,24 @@ export function TabbedFilter<TData extends Item>({
 
   const priceRange = getCurrentFilterValue(priceColumn);
   const dustRange = getCurrentFilterValue(dustColumn);
+  const goldRange = getCurrentFilterValue(goldColumn);
 
   const priceHasMin = hasMinFilter(priceRange);
   const priceHasMax = hasMaxFilter(priceRange);
   const dustHasMin = hasMinFilter(dustRange);
   const dustHasMax = hasMaxFilter(dustRange);
+  const goldHasMin = hasMinFilter(goldRange);
+  const goldHasMax = hasMaxFilter(goldRange);
 
   const isPriceFilterActive = priceHasMin || priceHasMax;
   const isDustFilterActive = dustHasMin || dustHasMax;
-  const isFilterActive = isPriceFilterActive || isDustFilterActive;
+  const isGoldFilterActive = goldHasMin || goldHasMax;
+  const isFilterActive =
+    isPriceFilterActive || isDustFilterActive || isGoldFilterActive;
   const numberOfActiveFilters =
-    (isPriceFilterActive ? 1 : 0) + (isDustFilterActive ? 1 : 0);
+    (isPriceFilterActive ? 1 : 0) +
+    (isDustFilterActive ? 1 : 0) +
+    (isGoldFilterActive ? 1 : 0);
 
   const handleReset = () => {
     if (priceColumn) {
@@ -63,16 +77,26 @@ export function TabbedFilter<TData extends Item>({
     if (dustColumn) {
       dustColumn.setFilterValue(undefined);
     }
+    if (goldColumn) {
+      goldColumn.setFilterValue(undefined);
+    }
   };
 
-  const handleApply = () => {
+  const handleClose = () => {
     setIsOpen(false);
   };
 
-  const dotColor =
-    activeTab === "price"
-      ? "bg-radial-[var(--color-amber-900)_1px,transparent_1px] dark:bg-radial-[var(--color-amber-300)_1px,transparent_1px]"
-      : "bg-radial-[var(--color-purple-900)_1px,transparent_1px] dark:bg-radial-[var(--color-purple-300)_1px,transparent_1px]";
+  function getDotColor(activeTab: string) {
+    if (activeTab === "price") {
+      return "bg-radial-[var(--color-amber-900)_1px,transparent_1px] dark:bg-radial-[var(--color-amber-300)_1px,transparent_1px]";
+    } else if (activeTab === "dust") {
+      return "bg-radial-[var(--color-purple-900)_1px,transparent_1px] dark:bg-radial-[var(--color-purple-300)_1px,transparent_1px]";
+    } else {
+      return "bg-radial-[var(--color-yellow-900)_1px,transparent_1px] dark:bg-radial-[var(--color-yellow-300)_1px,transparent_1px]";
+    }
+  }
+
+  const dotColor = getDotColor(activeTab);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -100,7 +124,7 @@ export function TabbedFilter<TData extends Item>({
               <h4 className="font-semibold">Apply Filter</h4>
             </div>
             <p className="text-muted-foreground text-sm text-pretty">
-              Filter items by price or dust value. Saved locally.
+              Filter items by price, dust value, or gold fee. Saved locally.
             </p>
           </div>
 
@@ -148,6 +172,23 @@ export function TabbedFilter<TData extends Item>({
                   )}
                 </span>
               </TabsTrigger>
+
+              <TabsTrigger value="gold" aria-label="Open gold fee filter tab">
+                <GoldIcon
+                  className={isGoldFilterActive ? "" : "grayscale-80"}
+                />
+
+                <span className="relative inline-flex items-center">
+                  <span className="text-xs leading-none">Gold</span>
+
+                  {isGoldFilterActive && (
+                    <span
+                      aria-hidden="true"
+                      className="bg-primary absolute left-full size-1.5 translate-x-1 -translate-y-1 rounded-full"
+                    />
+                  )}
+                </span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="price" className="z-10 space-y-4">
@@ -155,9 +196,7 @@ export function TabbedFilter<TData extends Item>({
                 column={priceColumn}
                 min={priceMin}
                 max={priceMax}
-                step={10}
-                smallStep={1}
-                largeStep={10}
+                step={1}
                 icon={<ChaosOrbIcon />}
                 title="Price"
               />
@@ -169,10 +208,19 @@ export function TabbedFilter<TData extends Item>({
                 min={dustMin}
                 max={dustMax}
                 step={50000}
-                smallStep={10000}
-                largeStep={100000}
                 icon={<DustIcon />}
                 title="Dust Value"
+              />
+            </TabsContent>
+
+            <TabsContent value="gold" className="z-10 space-y-4">
+              <RangeFilter
+                column={goldColumn}
+                min={goldMin}
+                max={goldMax}
+                step={500}
+                icon={<GoldIcon />}
+                title="Gold Fee"
               />
             </TabsContent>
           </Tabs>
@@ -187,7 +235,7 @@ export function TabbedFilter<TData extends Item>({
             >
               Reset All ({numberOfActiveFilters})
             </Button>
-            <Button size="sm" onClick={handleApply} className="flex-1">
+            <Button size="sm" onClick={handleClose} className="flex-1">
               Close
             </Button>
           </div>

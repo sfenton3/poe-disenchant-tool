@@ -19,13 +19,19 @@ const PersistedFiltersSchema = z.object({
       max: z.number().optional(),
     })
     .optional(),
+  gold: z
+    .object({
+      min: z.number().optional(),
+      max: z.number().optional(),
+    })
+    .optional(),
 });
 
 type PersistedFilters = z.infer<typeof PersistedFiltersSchema>;
 
 /**
  * Hook to persist and restore column filters.
- * Persists both price and dust value filters, ignores name filter and other filters.
+ * Persists price, dust value, and gold fee filters; ignores name filter and any other filters.
  */
 export function usePersistentFilters(storageKey: string) {
   if (!storageKey) {
@@ -49,6 +55,10 @@ export function usePersistentFilters(storageKey: string) {
           filter.id === COLUMN_IDS.CALCULATED_DUST_VALUE && filter.value,
       );
 
+      const goldFilter = columnFilters.find(
+        (filter) => filter.id === COLUMN_IDS.GOLD_FEE && filter.value,
+      );
+
       const filtersToUpdate: PersistedFilters = {};
 
       if (priceFilter?.value) {
@@ -57,6 +67,10 @@ export function usePersistentFilters(storageKey: string) {
 
       if (dustFilter?.value) {
         filtersToUpdate.dust = dustFilter.value as RangeFilterValue;
+      }
+
+      if (goldFilter?.value) {
+        filtersToUpdate.gold = goldFilter.value as RangeFilterValue;
       }
 
       if (Object.keys(filtersToUpdate).length > 0) {
