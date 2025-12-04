@@ -139,7 +139,11 @@ export function TabbedFilter<TData extends Item>({
             />
 
             <TabsList className="z-10 w-full">
-              <TabsTrigger value="price" aria-label="Open price filter tab">
+              <TabsTrigger
+                value="price"
+                aria-label="Open price filter tab"
+                className="gap-2"
+              >
                 <ChaosOrbIcon
                   className={isPriceFilterActive ? "" : "grayscale-80"}
                 />
@@ -150,13 +154,17 @@ export function TabbedFilter<TData extends Item>({
                   {isPriceFilterActive && (
                     <span
                       aria-hidden="true"
-                      className="bg-primary absolute left-full size-1.5 translate-x-1 -translate-y-1 rounded-full"
+                      className="bg-primary absolute left-full size-1.5 translate-x-1.5 -translate-y-1 rounded-full"
                     />
                   )}
                 </span>
               </TabsTrigger>
 
-              <TabsTrigger value="dust" aria-label="Open dust value filter tab">
+              <TabsTrigger
+                value="dust"
+                aria-label="Open dust value filter tab"
+                className="gap-2"
+              >
                 <DustIcon
                   className={isDustFilterActive ? "" : "grayscale-80"}
                 />
@@ -167,13 +175,17 @@ export function TabbedFilter<TData extends Item>({
                   {isDustFilterActive && (
                     <span
                       aria-hidden="true"
-                      className="bg-primary absolute left-full size-1.5 translate-x-1 -translate-y-1 rounded-full"
+                      className="bg-primary absolute left-full size-1.5 translate-x-1.5 -translate-y-1 rounded-full"
                     />
                   )}
                 </span>
               </TabsTrigger>
 
-              <TabsTrigger value="gold" aria-label="Open gold fee filter tab">
+              <TabsTrigger
+                value="gold"
+                aria-label="Open gold fee filter tab"
+                className="gap-2"
+              >
                 <GoldIcon
                   className={isGoldFilterActive ? "" : "grayscale-80"}
                 />
@@ -184,7 +196,7 @@ export function TabbedFilter<TData extends Item>({
                   {isGoldFilterActive && (
                     <span
                       aria-hidden="true"
-                      className="bg-primary absolute left-full size-1.5 translate-x-1 -translate-y-1 rounded-full"
+                      className="bg-primary absolute left-full size-1.5 translate-x-1.5 -translate-y-1 rounded-full"
                     />
                   )}
                 </span>
