@@ -90,7 +90,7 @@ export function TabbedFilter<TData extends Item>({
     if (activeTab === "price") {
       return "bg-radial-[var(--color-amber-900)_1px,transparent_1px] dark:bg-radial-[var(--color-amber-300)_1px,transparent_1px]";
     } else if (activeTab === "dust") {
-      return "bg-radial-[var(--color-purple-900)_1px,transparent_1px] dark:bg-radial-[var(--color-purple-300)_1px,transparent_1px]";
+      return "bg-radial-[var(--color-indigo-900)_1px,transparent_1px] dark:bg-radial-[var(--color-indigo-300)_1px,transparent_1px]";
     } else {
       return "bg-radial-[var(--color-yellow-900)_1px,transparent_1px] dark:bg-radial-[var(--color-yellow-300)_1px,transparent_1px]";
     }
